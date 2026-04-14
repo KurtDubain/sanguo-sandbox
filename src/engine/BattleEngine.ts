@@ -177,7 +177,7 @@ export class BattleEngine {
     targetSystem(this.state.units, this.state.mode, this.rng, tactOrders, cmdOrders, this.state.map)
 
     // 7. Movement
-    movementSystem(this.state.units, this.state.map, this.rng, this.state.weather, tactOrders)
+    movementSystem(this.state.units, this.state.map, this.rng, this.state.weather, tactOrders, this.state.mode)
 
     // 8. Attack
     const attackEvents = attackSystem(this.state.units, this.state.tick, this.rng, this.state.weather, this.state.map)

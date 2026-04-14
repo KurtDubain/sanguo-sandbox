@@ -19,7 +19,25 @@ export function moraleSystem(
 
     // === Morale Recovery ===
     const politicsRegen = unit.politics * BALANCE.POLITICS_REGEN
-    unit.morale += BALANCE.MORALE_REGEN_RATE + politicsRegen * 0.1
+    unit.morale += BALANCE.MORALE_REGEN_RATE + politicsRegen * 0.15
+
+    // === Rally Point: commander nearby boosts morale recovery ===
+    const commander = units.find(
+      (u) => u.faction === unit.faction && u.state !== 'dead' && u.state !== 'routed' &&
+             u.id !== unit.id && u.command >= 80 &&
+             distance(u.position, unit.position) < BALANCE.RALLY_RANGE
+    )
+    if (commander) {
+      unit.morale += BALANCE.RALLY_MORALE_REGEN * (commander.command / 100)
+    }
+
+    // === Second Wind: low HP units get a fighting spirit boost ===
+    const hpPct = unit.hp / unit.maxHp
+    if (hpPct > 0 && hpPct < BALANCE.SECOND_WIND_THRESHOLD && unit.state !== 'routed') {
+      // Morale stabilization — refuse to collapse while fighting
+      unit.morale += 0.15
+      // Attack/Defense buff applied via the attack system check
+    }
 
     // === Charisma Aura ===
     for (const ally of units) {

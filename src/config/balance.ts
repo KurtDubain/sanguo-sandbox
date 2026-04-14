@@ -116,14 +116,14 @@ export const BALANCE = {
   FLANK_MORALE_PENALTY: 3,
 
   // Formation
-  FORMATION_RANGE: 80,
+  FORMATION_RANGE: 100,          // wider formation range (was 80)
   FORMATION_DEF_BONUS: 0.08,
   FORMATION_MAX_ALLIES: 3,
 
   // Fatigue
   FATIGUE_TICK_THRESHOLD: 600,
-  FATIGUE_ATK_PENALTY: 0.0008,
-  FATIGUE_SPEED_PENALTY: 0.0005,
+  FATIGUE_ATK_PENALTY: 0.0004,   // halved (was 0.0008) — winners stay effective longer
+  FATIGUE_SPEED_PENALTY: 0.0003, // halved (was 0.0005)
   FATIGUE_POLITICS_RESIST: 0.005,
 
   // Pursuit
@@ -131,15 +131,22 @@ export const BALANCE = {
   PURSUIT_MARTIAL_BONUS: 0.003,
 
   // Morale
-  MORALE_DECAY_ON_HIT: 0.5,
-  MORALE_BOOST_ON_KILL: 8,
-  MORALE_REGEN_RATE: 0.1,
-  MORALE_RETREAT_THRESHOLD: 30,
-  MORALE_ROUT_THRESHOLD: 10,
-  MORALE_NEARBY_DEATH_PENALTY: 5,
-  MORALE_CASCADE_RANGE: 100,
-  MORALE_CASCADE_CHANCE: 0.15,
-  MORALE_CHARISMA_AURA_RANGE: 120,
+  MORALE_DECAY_ON_HIT: 0.35,          // reduced (was 0.5) — less morale lost per hit
+  MORALE_BOOST_ON_KILL: 10,           // buffed (was 8)
+  MORALE_REGEN_RATE: 0.3,             // 3x faster (was 0.1) — units can actually recover
+  MORALE_RETREAT_THRESHOLD: 25,       // lowered (was 30) — more fight before retreat
+  MORALE_ROUT_THRESHOLD: 8,           // lowered (was 10) — rout is harder to trigger
+  MORALE_NEARBY_DEATH_PENALTY: 4,     // reduced (was 5)
+  MORALE_CASCADE_RANGE: 80,           // tighter (was 100)
+  MORALE_CASCADE_CHANCE: 0.06,        // massively reduced (was 0.15) — no more instant army rout
+  MORALE_CHARISMA_AURA_RANGE: 140,    // wider (was 120)
+
+  // Rally & Comeback
+  RALLY_RANGE: 150,                   // commander rally point radius
+  RALLY_MORALE_REGEN: 0.5,            // morale recovery per tick in rally zone
+  SECOND_WIND_THRESHOLD: 0.25,        // HP% to trigger second wind
+  SECOND_WIND_ATK_BONUS: 0.4,         // +40% ATK during second wind
+  SECOND_WIND_DEF_BONUS: 0.25,        // +25% DEF during second wind
 
   // Movement
   BASE_SPEED: 2.5,               // slower, more cinematic

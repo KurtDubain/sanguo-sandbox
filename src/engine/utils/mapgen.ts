@@ -3,7 +3,7 @@ import { BALANCE } from '../../config/balance'
 import { TERRAIN_MODIFIERS } from '../../config/balance'
 import { SeededRandom } from './random'
 
-export type MapTemplate = 'valley' | 'crossroads' | 'fortress' | 'plains' | 'river_delta' | 'mountain_pass' | 'siege_castle' | 'changban' | 'chibi' | 'hulao' | 'jieting' | 'twin_lakes' | 'canyon_bridge' | 'three_kingdoms' | 'swamp' | 'random'
+export type MapTemplate = 'valley' | 'crossroads' | 'fortress' | 'plains' | 'river_delta' | 'mountain_pass' | 'siege_castle' | 'changban' | 'chibi' | 'hulao' | 'jieting' | 'twin_lakes' | 'canyon_bridge' | 'three_kingdoms' | 'swamp' | 'labyrinth' | 'islands' | 'ambush_valley' | 'volcano' | 'great_wall' | 'random'
 
 const MAP_TEMPLATE_NAMES: Record<MapTemplate, string> = {
   valley: '峡谷', crossroads: '十字路口', fortress: '中央要塞',
@@ -11,6 +11,7 @@ const MAP_TEMPLATE_NAMES: Record<MapTemplate, string> = {
   siege_castle: '攻城', changban: '长坂坡', chibi: '赤壁',
   hulao: '虎牢关', jieting: '街亭',
   twin_lakes: '双湖', canyon_bridge: '栈道', three_kingdoms: '三分天下', swamp: '沼泽',
+  labyrinth: '迷宫', islands: '群岛', ambush_valley: '伏兵谷', volcano: '火山口', great_wall: '长城',
   random: '随机',
 }
 export { MAP_TEMPLATE_NAMES }
@@ -52,7 +53,7 @@ export function generateMap(rng: SeededRandom, template?: MapTemplate): BattleMa
 
   let tmpl = template ?? 'random'
   if (tmpl === 'random') {
-    tmpl = rng.pick(['valley', 'crossroads', 'fortress', 'plains', 'river_delta', 'mountain_pass', 'changban', 'chibi', 'hulao', 'jieting', 'twin_lakes', 'canyon_bridge', 'three_kingdoms', 'swamp'])
+    tmpl = rng.pick(['valley', 'crossroads', 'fortress', 'plains', 'river_delta', 'mountain_pass', 'changban', 'chibi', 'hulao', 'jieting', 'twin_lakes', 'canyon_bridge', 'three_kingdoms', 'swamp', 'labyrinth', 'islands', 'ambush_valley', 'volcano', 'great_wall'])
   }
 
   switch (tmpl) {
@@ -71,6 +72,11 @@ export function generateMap(rng: SeededRandom, template?: MapTemplate): BattleMa
     case 'canyon_bridge': genCanyonBridge(terrain, cols, rows, rng, seed); break
     case 'three_kingdoms': genThreeKingdoms(terrain, cols, rows, rng, seed); break
     case 'swamp': genSwamp(terrain, cols, rows, rng, seed); break
+    case 'labyrinth': genLabyrinth(terrain, cols, rows, rng, seed); break
+    case 'islands': genIslands(terrain, cols, rows, rng, seed); break
+    case 'ambush_valley': genAmbushValley(terrain, cols, rows, rng, seed); break
+    case 'volcano': genVolcano(terrain, cols, rows, rng, seed); break
+    case 'great_wall': genGreatWall(terrain, cols, rows, rng, seed); break
   }
 
   // Noise-based forest scatter (only on plain cells)
@@ -833,6 +839,341 @@ function genSwamp(t: TerrainType[][], cols: number, rows: number, rng: SeededRan
         }
       }
     }
+  }
+}
+
+// ============ 迷宫: mountain walls forming a maze with corridors ============
+function genLabyrinth(t: TerrainType[][], cols: number, rows: number, rng: SeededRandom, _seed: number) {
+  // Grid-based maze using recursive backtracking on a coarse grid
+  const cellW = 6 // maze cell width in terrain cells
+  const cellH = 6
+  const mazeCols = Math.floor((cols - SAFE_CELLS * 2) / cellW)
+  const mazeRows = Math.floor((rows - SAFE_CELLS * 2) / cellH)
+  const ox = SAFE_CELLS + 1
+  const oy = SAFE_CELLS + 1
+
+  // Fill maze area with walls
+  for (let y = oy; y < rows - SAFE_CELLS; y++) {
+    for (let x = ox; x < cols - SAFE_CELLS; x++) {
+      t[y][x] = 'mountain'
+    }
+  }
+
+  // Carve rooms
+  const visited = new Set<string>()
+  const stack: [number, number][] = []
+  const start: [number, number] = [0, 0]
+  visited.add(`${start[0]},${start[1]}`)
+  stack.push(start)
+  carveRoom(t, ox, oy, cellW, cellH, cols, rows)
+
+  while (stack.length > 0) {
+    const [cx, cy] = stack[stack.length - 1]
+    const neighbors: [number, number, number, number][] = [] // nx,ny,wallX,wallY
+    const dirs: [number, number][] = [[0, -1], [0, 1], [-1, 0], [1, 0]]
+    for (const [dx, dy] of dirs) {
+      const nx = cx + dx, ny = cy + dy
+      if (nx >= 0 && nx < mazeCols && ny >= 0 && ny < mazeRows && !visited.has(`${nx},${ny}`)) {
+        neighbors.push([nx, ny, cx * cellW + ox + (dx > 0 ? cellW - 1 : dx < 0 ? 0 : Math.floor(cellW / 2)),
+                                cy * cellH + oy + (dy > 0 ? cellH - 1 : dy < 0 ? 0 : Math.floor(cellH / 2))])
+      }
+    }
+    if (neighbors.length === 0) { stack.pop(); continue }
+    const [nx, ny] = rng.pick(neighbors)
+    visited.add(`${nx},${ny}`)
+    stack.push([nx, ny])
+    // Carve room at new cell
+    carveRoom(t, ox + nx * cellW, oy + ny * cellH, cellW, cellH, cols, rows)
+    // Carve corridor between
+    const midX = ox + Math.floor((cx + nx) * cellW / 2 + cellW / 2)
+    const midY = oy + Math.floor((cy + ny) * cellH / 2 + cellH / 2)
+    for (let dy = -1; dy <= 1; dy++) {
+      for (let dx = -1; dx <= 1; dx++) {
+        if (midX + dx >= 0 && midX + dx < cols && midY + dy >= 0 && midY + dy < rows)
+          t[midY + dy][midX + dx] = 'plain'
+      }
+    }
+  }
+
+  // Scatter some forests in open areas
+  for (let y = 0; y < rows; y++) {
+    for (let x = 0; x < cols; x++) {
+      if (t[y][x] === 'plain' && !isInSafeZone(x, y, cols, rows) && rng.chance(0.06)) t[y][x] = 'forest'
+    }
+  }
+}
+
+function carveRoom(t: TerrainType[][], rx: number, ry: number, w: number, h: number, cols: number, rows: number) {
+  for (let dy = 1; dy < h - 1; dy++) {
+    for (let dx = 1; dx < w - 1; dx++) {
+      const x = rx + dx, y = ry + dy
+      if (x >= 0 && x < cols && y >= 0 && y < rows) t[y][x] = 'plain'
+    }
+  }
+}
+
+// ============ 群岛: scattered islands connected by bridges ============
+function genIslands(t: TerrainType[][], cols: number, rows: number, rng: SeededRandom, seed: number) {
+  // Fill with water
+  for (let y = 0; y < rows; y++) {
+    for (let x = 0; x < cols; x++) {
+      if (!isInSafeZone(x, y, cols, rows)) t[y][x] = 'river'
+    }
+  }
+
+  // Create 6-10 islands using noise blobs
+  const islandCount = rng.int(6, 10)
+  const islands: { cx: number; cy: number; r: number }[] = []
+  for (let i = 0; i < islandCount; i++) {
+    const cx = rng.int(SAFE_CELLS + 5, cols - SAFE_CELLS - 5)
+    const cy = rng.int(SAFE_CELLS + 5, rows - SAFE_CELLS - 5)
+    const r = rng.int(3, 6)
+    islands.push({ cx, cy, r })
+    for (let dy = -r; dy <= r; dy++) {
+      for (let dx = -r; dx <= r; dx++) {
+        const dist = Math.sqrt(dx * dx + dy * dy)
+        const noise = smoothNoise(cx + dx, cy + dy, 3, seed + i * 100) * 1.5
+        if (dist < r + noise) {
+          const x = cx + dx, y = cy + dy
+          if (x >= 0 && x < cols && y >= 0 && y < rows) {
+            t[y][x] = rng.chance(0.15) ? 'forest' : 'plain'
+          }
+        }
+      }
+    }
+    // Small mountain in center of big islands
+    if (r >= 5 && rng.chance(0.5)) {
+      t[cy][cx] = 'mountain'
+    }
+  }
+
+  // Connect islands with bridges — find closest pairs
+  for (let i = 0; i < islands.length; i++) {
+    let bestJ = -1, bestDist = Infinity
+    for (let j = 0; j < islands.length; j++) {
+      if (i === j) continue
+      const d = Math.sqrt((islands[i].cx - islands[j].cx) ** 2 + (islands[i].cy - islands[j].cy) ** 2)
+      if (d < bestDist) { bestDist = d; bestJ = j }
+    }
+    if (bestJ >= 0) {
+      // Draw bridge line between them
+      const a = islands[i], b = islands[bestJ]
+      const steps = Math.ceil(bestDist)
+      for (let s = 0; s <= steps; s++) {
+        const frac = s / steps
+        const bx = Math.round(a.cx + (b.cx - a.cx) * frac)
+        const by = Math.round(a.cy + (b.cy - a.cy) * frac)
+        if (bx >= 0 && bx < cols && by >= 0 && by < rows && t[by][bx] === 'river') {
+          t[by][bx] = 'bridge'
+        }
+      }
+    }
+  }
+
+  // Ensure corners are connected to nearest island
+  const corners = [
+    [SAFE_CELLS, SAFE_CELLS], [cols - SAFE_CELLS - 1, SAFE_CELLS],
+    [SAFE_CELLS, rows - SAFE_CELLS - 1], [cols - SAFE_CELLS - 1, rows - SAFE_CELLS - 1],
+  ]
+  for (const [cx, cy] of corners) {
+    let best = islands[0]
+    let bestD = Infinity
+    for (const isl of islands) {
+      const d = Math.sqrt((isl.cx - cx) ** 2 + (isl.cy - cy) ** 2)
+      if (d < bestD) { bestD = d; best = isl }
+    }
+    const steps = Math.ceil(bestD)
+    for (let s = 0; s <= steps; s++) {
+      const frac = s / steps
+      const bx = Math.round(cx + (best.cx - cx) * frac)
+      const by = Math.round(cy + (best.cy - cy) * frac)
+      if (bx >= 0 && bx < cols && by >= 0 && by < rows && t[by][bx] === 'river') {
+        t[by][bx] = 'bridge'
+      }
+    }
+  }
+}
+
+// ============ 伏兵谷: narrow valley with dense forest on both sides ============
+function genAmbushValley(t: TerrainType[][], cols: number, rows: number, rng: SeededRandom, seed: number) {
+  const midY = Math.floor(rows / 2)
+  const valleyWidth = rng.int(6, 9)
+
+  // Fill sides with forest
+  for (let y = 0; y < rows; y++) {
+    for (let x = 0; x < cols; x++) {
+      if (isInSafeZone(x, y, cols, rows)) continue
+      const distFromCenter = Math.abs(y - midY)
+      const noise = smoothNoise(x, y, 5, seed) * 3
+      if (distFromCenter > valleyWidth / 2 + noise) {
+        t[y][x] = 'forest'
+        // Deeper forest becomes mountain
+        if (distFromCenter > valleyWidth + 3 + noise && rng.chance(0.3)) {
+          t[y][x] = 'mountain'
+        }
+      }
+    }
+  }
+
+  // River crossing the valley
+  const rx = Math.floor(cols / 2) + rng.int(-5, 5)
+  for (let y = midY - valleyWidth; y <= midY + valleyWidth; y++) {
+    if (y >= 0 && y < rows && t[y][rx] !== 'mountain') t[y][rx] = 'river'
+    if (rx + 1 < cols && t[y][rx + 1] !== 'mountain') t[y][rx + 1] = 'river'
+  }
+  // Bridge
+  t[midY][rx] = 'bridge'
+  t[midY][rx + 1] = 'bridge'
+  if (midY + 1 < rows) { t[midY + 1][rx] = 'bridge'; t[midY + 1][rx + 1] = 'bridge' }
+
+  // Hidden paths from forest to valley (ambush routes)
+  for (let i = 0; i < rng.int(3, 5); i++) {
+    const px = rng.int(SAFE_CELLS + 3, cols - SAFE_CELLS - 3)
+    for (let dy = -valleyWidth - 5; dy <= valleyWidth + 5; dy++) {
+      const y = midY + dy
+      if (y >= 0 && y < rows && t[y][px] === 'forest') t[y][px] = 'plain'
+      if (px + 1 < cols && y >= 0 && y < rows && t[y][px + 1] === 'forest') t[y][px + 1] = 'plain'
+    }
+  }
+}
+
+// ============ 火山口: central volcanic crater with lava rivers ============
+function genVolcano(t: TerrainType[][], cols: number, rows: number, rng: SeededRandom, seed: number) {
+  const midX = Math.floor(cols / 2)
+  const midY = Math.floor(rows / 2)
+  const craterR = Math.min(cols, rows) * 0.12
+  const rimR = craterR + 4
+
+  // Volcanic rim (mountain ring)
+  for (let y = 0; y < rows; y++) {
+    for (let x = 0; x < cols; x++) {
+      if (isInSafeZone(x, y, cols, rows)) continue
+      const dx = x - midX, dy = y - midY
+      const dist = Math.sqrt(dx * dx + dy * dy)
+      const noise = smoothNoise(x, y, 4, seed) * 2
+      if (dist >= craterR + noise && dist <= rimR + noise) {
+        t[y][x] = 'mountain'
+      }
+      // Inside crater: river (lava lake)
+      if (dist < craterR * 0.6 + noise) {
+        t[y][x] = 'river'
+      }
+    }
+  }
+
+  // Lava rivers radiating outward (4 directions)
+  const lavaAngles = [0, Math.PI / 2, Math.PI, Math.PI * 1.5]
+  for (const angle of lavaAngles) {
+    let lx = midX, ly = midY
+    for (let r = 0; r < Math.max(cols, rows) * 0.4; r++) {
+      lx = Math.round(midX + Math.cos(angle + smoothNoise(r, 0, 5, seed + 999) * 0.3) * r)
+      ly = Math.round(midY + Math.sin(angle + smoothNoise(r, 1, 5, seed + 999) * 0.3) * r)
+      if (lx >= 0 && lx < cols && ly >= 0 && ly < rows && !isInSafeZone(lx, ly, cols, rows)) {
+        if (t[ly][lx] !== 'mountain') t[ly][lx] = 'river'
+      }
+    }
+    // Bridges across lava rivers
+    const bDist = rng.int(Math.floor(rimR) + 3, Math.floor(rimR) + 10)
+    const bx = Math.round(midX + Math.cos(angle + Math.PI / 4) * bDist)
+    const by = Math.round(midY + Math.sin(angle + Math.PI / 4) * bDist)
+    if (bx >= 0 && bx < cols && by >= 0 && by < rows && t[by][bx] === 'river') t[by][bx] = 'bridge'
+  }
+
+  // Crater gates (break rim)
+  for (const angle of lavaAngles) {
+    for (let w = -2; w <= 2; w++) {
+      for (let r = craterR - 1; r <= rimR + 2; r++) {
+        const gx = Math.round(midX + Math.cos(angle) * r + Math.cos(angle + Math.PI / 2) * w)
+        const gy = Math.round(midY + Math.sin(angle) * r + Math.sin(angle + Math.PI / 2) * w)
+        if (gx >= 0 && gx < cols && gy >= 0 && gy < rows && t[gy][gx] === 'mountain') {
+          t[gy][gx] = 'plain'
+        }
+      }
+    }
+  }
+
+  // Scattered forests outside crater
+  for (let y = 0; y < rows; y++) {
+    for (let x = 0; x < cols; x++) {
+      if (t[y][x] !== 'plain' || isInSafeZone(x, y, cols, rows)) continue
+      const dx = x - midX, dy = y - midY
+      const dist = Math.sqrt(dx * dx + dy * dy)
+      if (dist > rimR + 3) {
+        const n = fbm(x, y, seed + 700)
+        if (n > 0.55 && n < 0.68) t[y][x] = 'forest'
+      }
+    }
+  }
+}
+
+// ============ 长城: a long wall dividing the map with towers ============
+function genGreatWall(t: TerrainType[][], cols: number, rows: number, rng: SeededRandom, seed: number) {
+  // Wall runs horizontally with some curve
+  let wallY = Math.floor(rows * 0.45)
+  for (let x = 0; x < cols; x++) {
+    if (isInSafeZone(x, wallY, cols, rows)) continue
+    // Wall is 2-3 cells thick
+    for (let dy = -1; dy <= 1; dy++) {
+      const y = wallY + dy
+      if (y >= 0 && y < rows && !isInSafeZone(x, y, cols, rows)) t[y][x] = 'wall'
+    }
+    // Curve
+    if (rng.chance(0.15)) wallY += rng.int(-1, 1)
+    wallY = Math.max(SAFE_CELLS + 3, Math.min(rows - SAFE_CELLS - 3, wallY))
+  }
+
+  // Gates every ~15 cells
+  for (let gx = SAFE_CELLS + 8; gx < cols - SAFE_CELLS - 5; gx += rng.int(12, 18)) {
+    const gateW = rng.int(2, 3)
+    for (let dx = -gateW; dx <= gateW; dx++) {
+      for (let dy = -2; dy <= 2; dy++) {
+        const x = gx + dx, y = wallY + dy
+        if (x >= 0 && x < cols && y >= 0 && y < rows && t[y][x] === 'wall') {
+          t[y][x] = 'bridge'
+        }
+      }
+    }
+  }
+
+  // Watchtowers along wall (small mountain bumps)
+  for (let tx = SAFE_CELLS + 5; tx < cols - SAFE_CELLS - 3; tx += rng.int(8, 14)) {
+    for (let dy = -2; dy <= 2; dy++) {
+      const y = wallY + dy
+      if (y >= 0 && y < rows && !isInSafeZone(tx, y, cols, rows)) {
+        if (Math.abs(dy) <= 1) t[y][tx] = 'wall'
+        else t[y][tx] = 'mountain'
+      }
+    }
+  }
+
+  // Northern terrain: mountains + forests (barbarian lands)
+  for (let y = 0; y < wallY - 2; y++) {
+    for (let x = 0; x < cols; x++) {
+      if (isInSafeZone(x, y, cols, rows)) continue
+      const n = fbm(x, y, seed)
+      if (n > 0.5 && n < 0.65) t[y][x] = 'forest'
+      else if (n > 0.72) setIfPlain(t, x, y, 'mountain', cols, rows)
+    }
+  }
+
+  // Southern terrain: plains + farming (civilized)
+  for (let y = wallY + 3; y < rows; y++) {
+    for (let x = 0; x < cols; x++) {
+      if (isInSafeZone(x, y, cols, rows)) continue
+      const n = fbm(x, y, seed + 300)
+      if (n > 0.58 && n < 0.68) t[y][x] = 'forest'
+    }
+  }
+
+  // River on the southern side
+  if (rng.chance(0.6)) {
+    let ry = wallY + rng.int(5, 8)
+    for (let x = SAFE_CELLS; x < cols - SAFE_CELLS; x++) {
+      if (!isInSafeZone(x, ry, cols, rows)) setIfPlain(t, x, ry, 'river', cols, rows)
+      if (rng.chance(0.2)) ry += rng.int(-1, 1)
+      ry = Math.max(wallY + 4, Math.min(rows - SAFE_CELLS - 2, ry))
+    }
+    placeBridgesH(t, cols, rows, rng, 2)
   }
 }
 

@@ -33,8 +33,8 @@ export function victorySystem(
         }],
       }
     }
-  } else {
-    // Free-for-all
+  } else if (mode === 'free_for_all') {
+    // Free-for-all: last person standing
     if (alive.length === 1) {
       return {
         result: buildResult(units, alive[0].name, alive[0].id, mode, tick),
@@ -46,18 +46,18 @@ export function victorySystem(
       }
     }
 
-    // Also check if all alive units are from same faction (accidental team-up in FFA)
-    const allSameFaction = alive.every((u) => u.faction === alive[0].faction)
-    if (allSameFaction && alive.length <= 3) {
-      // End if remaining are all allies and have stopped fighting
+    // If only 2-3 units remain and they haven't fought for a while, end it
+    if (alive.length <= 3 && tick > 500) {
       const anyFighting = alive.some((u) => u.state === 'attacking')
       if (!anyFighting) {
+        // Pick the one with most kills as winner
+        const best = alive.reduce((a, b) => a.kills > b.kills ? a : b)
         return {
-          result: buildResult(units, alive[0].faction, alive[0].faction, mode, tick),
+          result: buildResult(units, best.name, best.id, mode, tick),
           events: [{
             tick,
             type: 'battle_end',
-            message: `${alive.map((u) => u.name).join('、')} 存活到了最后！`,
+            message: `${alive.map((u) => u.name).join('、')} 存活到了最后！${best.name} 获胜！`,
           }],
         }
       }

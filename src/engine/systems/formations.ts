@@ -156,12 +156,12 @@ export function warCryCheck(
   tick: number,
   rng: SeededRandom,
 ): GameEvent[] {
-  if (tick % 60 !== 0) return [] // every 60 ticks
+  if (tick % 45 !== 0) return [] // every 45 ticks (was 60)
   const events: GameEvent[] = []
 
   for (const unit of units) {
     if (unit.state === 'dead' || unit.charisma < 80) continue
-    if (!rng.chance(0.3)) continue // 30% chance per check
+    if (!rng.chance(0.45)) continue // 45% chance per check (was 30%)
 
     const allies = units.filter(
       (u) => u.id !== unit.id && u.faction === unit.faction &&
@@ -171,7 +171,7 @@ export function warCryCheck(
     if (allies.length < 2) continue
 
     for (const ally of allies) {
-      ally.morale = Math.min(ally.maxMorale, ally.morale + 8)
+      ally.morale = Math.min(ally.maxMorale, ally.morale + 15) // was 8
       ally.buffs.push({
         type: 'buff_atk',
         value: 12,
@@ -206,12 +206,12 @@ export function surrenderCheck(
     if (unit.state === 'dead' || unit.state === 'routed') continue
 
     const hpPct = unit.hp / unit.maxHp
-    if (hpPct > 0.3 || unit.morale > 20) continue
+    if (hpPct > 0.15 || unit.morale > 15) continue // HP 15% + morale 15 (was 30%/20)
 
     // Check if alone
     const nearbyAllies = units.filter(
       (u) => u.id !== unit.id && u.faction === unit.faction &&
-             u.state !== 'dead' && distance(u.position, unit.position) < 200
+             u.state !== 'dead' && distance(u.position, unit.position) < 300  // wider check (was 200)
     ).length
 
     const nearbyEnemies = units.filter(

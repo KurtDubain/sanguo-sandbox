@@ -200,6 +200,16 @@ export function attackSystem(
       lastStandMult = 1 + unit.martial * BALANCE.LAST_STAND_MARTIAL_BONUS
     }
 
+    // === Second Wind: low HP attacker gets bonus ATK ===
+    if (unit.hp / unit.maxHp < BALANCE.SECOND_WIND_THRESHOLD && unit.hp > 0) {
+      atkPower *= 1 + BALANCE.SECOND_WIND_ATK_BONUS
+    }
+
+    // === Second Wind: low HP target gets bonus DEF ===
+    if (target.hp / target.maxHp < BALANCE.SECOND_WIND_THRESHOLD && target.hp > 0) {
+      defPower *= 1 + BALANCE.SECOND_WIND_DEF_BONUS
+    }
+
     // === Dodge check: target can dodge based on speed + martial ===
     const dodgeChance = Math.min(
       BALANCE.DODGE_MAX,
