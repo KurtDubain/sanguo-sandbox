@@ -1,0 +1,32 @@
+@import "tailwindcss";
+
+:root {
+  font-family: "Noto Sans SC", "PingFang SC", system-ui, sans-serif;
+}
+
+body {
+  margin: 0;
+  background: #0a0e17;
+  color: #d4c9a8;
+  min-height: 100vh;
+}
+
+#root {
+  min-height: 100vh;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #1a1e2e;
+}
+::-webkit-scrollbar-thumb {
+  background: #3a3e4e;
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #5a5e6e;
+}
