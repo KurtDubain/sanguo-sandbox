@@ -20,12 +20,15 @@ export const SKILLS: Record<string, Skill> = {
   inspire: {
     id: 'inspire',
     name: '激励',
-    description: '提高周围友军士气',
-    cooldown: 100,
-    triggerChance: 0.5,
+    description: '提高周围友军士气和攻击力',
+    cooldown: 80,
+    triggerChance: 0.55,
     targetType: 'ally',
     range: 150,
-    effects: [{ type: 'buff_morale', value: 20, duration: 40 }],
+    effects: [
+      { type: 'buff_morale', value: 25, duration: 50 },
+      { type: 'buff_atk', value: 12, duration: 40 },
+    ],
   },
   stratagem: {
     id: 'stratagem',
@@ -66,9 +69,9 @@ export const SKILLS: Record<string, Skill> = {
   fire_attack: {
     id: 'fire_attack',
     name: '火计',
-    description: '范围持续伤害并打击士气',
-    cooldown: 120,
-    triggerChance: 0.4,
+    description: '范围火攻，伤害敌人并点燃森林',
+    cooldown: 80,
+    triggerChance: 0.55,
     targetType: 'area',
     range: 120,
     effects: [
@@ -79,9 +82,9 @@ export const SKILLS: Record<string, Skill> = {
   heal: {
     id: 'heal',
     name: '治疗',
-    description: '恢复自身和附近友军生命值',
-    cooldown: 100,
-    triggerChance: 0.45,
+    description: '恢复自身和附近友军生命值（随政治提升）',
+    cooldown: 70,
+    triggerChance: 0.6,
     targetType: 'ally',
     range: 100,
     effects: [{ type: 'heal', value: 25, duration: 0 }],
@@ -99,12 +102,15 @@ export const SKILLS: Record<string, Skill> = {
   rally: {
     id: 'rally',
     name: '整军',
-    description: '大幅恢复自身和友军士气',
-    cooldown: 120,
-    triggerChance: 0.45,
+    description: '大幅恢复士气并提高防御',
+    cooldown: 100,
+    triggerChance: 0.5,
     targetType: 'ally',
-    range: 120,
-    effects: [{ type: 'buff_morale', value: 30, duration: 50 }],
+    range: 130,
+    effects: [
+      { type: 'buff_morale', value: 35, duration: 60 },
+      { type: 'buff_def', value: 15, duration: 40 },
+    ],
   },
   snipe: {
     id: 'snipe',

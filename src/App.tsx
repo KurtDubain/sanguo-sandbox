@@ -30,16 +30,16 @@ export default function App() {
 
   return (
     <div className="h-[100dvh] flex flex-col bg-[#0a0e17] text-[#d4c9a8] overflow-hidden">
-      {/* Header */}
-      <header className="flex items-center justify-between px-3 py-1.5 bg-gray-900/60 border-b border-gray-800 shrink-0">
-        <h1 className="text-sm md:text-base font-bold tracking-wide text-amber-200/80 truncate">
-          三国演弈 — 冷兵器沙盒模拟器
+      {/* Header — compact on mobile */}
+      <header className="flex items-center justify-between px-2 sm:px-3 py-1 bg-gray-900/60 border-b border-gray-800 shrink-0">
+        <h1 className="text-xs sm:text-sm md:text-base font-bold tracking-wide text-amber-200/80 truncate">
+          三国演弈
         </h1>
-        <div className="flex items-center gap-2 text-xs text-gray-500 shrink-0">
-          <span className="hidden sm:inline">空格=暂停 1-4=速度 R=重开</span>
+        <div className="flex items-center gap-1.5 text-xs text-gray-500 shrink-0">
+          <span className="hidden md:inline">空格=暂停 1-4=速度 R=重开</span>
           <button
             onClick={togglePanel}
-            className="text-gray-400 hover:text-gray-200 text-xs px-2 py-0.5 border border-gray-700 rounded"
+            className="text-gray-400 hover:text-gray-200 text-[10px] sm:text-xs px-1.5 py-0.5 border border-gray-700 rounded"
           >
             {isPanelOpen ? '收起' : '面板'}
           </button>
@@ -47,24 +47,24 @@ export default function App() {
       </header>
 
       {/* Control bar */}
-      <div className="px-2 md:px-4 py-1.5 shrink-0">
+      <div className="px-1.5 sm:px-2 md:px-4 py-1 shrink-0">
         <ControlBar />
       </div>
 
-      {/* Main content — responsive layout */}
-      <div className="flex-1 flex flex-col lg:flex-row min-h-0 px-2 md:px-4 pb-2 gap-2">
+      {/* Main content */}
+      <div className="flex-1 flex flex-col lg:flex-row min-h-0 px-1.5 sm:px-2 md:px-4 pb-1 gap-1.5">
 
-        {/* Side panel — full width on mobile, sidebar on desktop */}
+        {/* Side panel */}
         {isPanelOpen && (
           <div className="lg:w-72 xl:w-80 flex flex-col bg-gray-900/40 border border-gray-800 rounded-lg overflow-hidden shrink-0
-            max-h-[35vh] lg:max-h-none order-2 lg:order-1">
-            {/* Tab bar */}
-            <div className="flex border-b border-gray-800 shrink-0">
+            max-h-[30vh] lg:max-h-none order-2 lg:order-1">
+            {/* Tab bar — scrollable on mobile */}
+            <div className="flex border-b border-gray-800 shrink-0 overflow-x-auto">
               {TABS.map((tab) => (
                 <button
                   key={tab.key}
                   onClick={() => setActiveTab(tab.key)}
-                  className={`flex-1 text-xs py-1.5 transition-colors ${
+                  className={`shrink-0 text-[10px] sm:text-xs px-2 sm:px-3 py-1.5 transition-colors whitespace-nowrap ${
                     activeTab === tab.key
                       ? 'text-amber-300 border-b-2 border-amber-400 bg-gray-800/30'
                       : 'text-gray-500 hover:text-gray-300'
@@ -75,7 +75,6 @@ export default function App() {
               ))}
             </div>
 
-            {/* Tab content */}
             <div className="flex-1 overflow-hidden">
               {activeTab === 'config' && <ConfigPanel />}
               {activeTab === 'log' && <LogPanel />}
@@ -88,9 +87,9 @@ export default function App() {
           </div>
         )}
 
-        {/* Battlefield area */}
+        {/* Battlefield */}
         <div className="flex-1 flex flex-col min-h-0 min-w-0 order-1 lg:order-2 overflow-hidden">
-          <div className="flex-1 flex items-center justify-center relative min-h-0 p-1">
+          <div className="flex-1 flex items-center justify-center relative min-h-0">
             <BattleCanvas />
             <KillFeed />
             <UnitDetailOverlay />

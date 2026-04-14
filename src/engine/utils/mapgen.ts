@@ -3,7 +3,7 @@ import { BALANCE } from '../../config/balance'
 import { TERRAIN_MODIFIERS } from '../../config/balance'
 import { SeededRandom } from './random'
 
-export type MapTemplate = 'valley' | 'crossroads' | 'fortress' | 'plains' | 'river_delta' | 'mountain_pass' | 'siege_castle' | 'changban' | 'chibi' | 'hulao' | 'jieting' | 'twin_lakes' | 'canyon_bridge' | 'three_kingdoms' | 'swamp' | 'labyrinth' | 'islands' | 'ambush_valley' | 'volcano' | 'great_wall' | 'random'
+export type MapTemplate = 'valley' | 'crossroads' | 'fortress' | 'plains' | 'river_delta' | 'mountain_pass' | 'siege_castle' | 'changban' | 'chibi' | 'hulao' | 'jieting' | 'twin_lakes' | 'canyon_bridge' | 'three_kingdoms' | 'swamp' | 'labyrinth' | 'islands' | 'ambush_valley' | 'volcano' | 'great_wall' | 'spiral' | 'oasis' | 'frozen_river' | 'arena' | 'bagua' | 'random'
 
 const MAP_TEMPLATE_NAMES: Record<MapTemplate, string> = {
   valley: '峡谷', crossroads: '十字路口', fortress: '中央要塞',
@@ -12,6 +12,7 @@ const MAP_TEMPLATE_NAMES: Record<MapTemplate, string> = {
   hulao: '虎牢关', jieting: '街亭',
   twin_lakes: '双湖', canyon_bridge: '栈道', three_kingdoms: '三分天下', swamp: '沼泽',
   labyrinth: '迷宫', islands: '群岛', ambush_valley: '伏兵谷', volcano: '火山口', great_wall: '长城',
+  spiral: '螺旋', oasis: '绿洲', frozen_river: '冰河', arena: '斗兽场', bagua: '八卦阵',
   random: '随机',
 }
 export { MAP_TEMPLATE_NAMES }
@@ -53,7 +54,7 @@ export function generateMap(rng: SeededRandom, template?: MapTemplate): BattleMa
 
   let tmpl = template ?? 'random'
   if (tmpl === 'random') {
-    tmpl = rng.pick(['valley', 'crossroads', 'fortress', 'plains', 'river_delta', 'mountain_pass', 'changban', 'chibi', 'hulao', 'jieting', 'twin_lakes', 'canyon_bridge', 'three_kingdoms', 'swamp', 'labyrinth', 'islands', 'ambush_valley', 'volcano', 'great_wall'])
+    tmpl = rng.pick(['valley', 'crossroads', 'fortress', 'plains', 'river_delta', 'mountain_pass', 'changban', 'chibi', 'hulao', 'jieting', 'twin_lakes', 'canyon_bridge', 'three_kingdoms', 'swamp', 'labyrinth', 'islands', 'ambush_valley', 'volcano', 'great_wall', 'spiral', 'oasis', 'frozen_river', 'arena', 'bagua'])
   }
 
   switch (tmpl) {
@@ -77,6 +78,11 @@ export function generateMap(rng: SeededRandom, template?: MapTemplate): BattleMa
     case 'ambush_valley': genAmbushValley(terrain, cols, rows, rng, seed); break
     case 'volcano': genVolcano(terrain, cols, rows, rng, seed); break
     case 'great_wall': genGreatWall(terrain, cols, rows, rng, seed); break
+    case 'spiral': genSpiral(terrain, cols, rows, rng, seed); break
+    case 'oasis': genOasis(terrain, cols, rows, rng, seed); break
+    case 'frozen_river': genFrozenRiver(terrain, cols, rows, rng, seed); break
+    case 'arena': genArena(terrain, cols, rows, rng, seed); break
+    case 'bagua': genBagua(terrain, cols, rows, rng, seed); break
   }
 
   // Noise-based forest scatter (only on plain cells)
@@ -1174,6 +1180,297 @@ function genGreatWall(t: TerrainType[][], cols: number, rows: number, rng: Seede
       ry = Math.max(wallY + 4, Math.min(rows - SAFE_CELLS - 2, ry))
     }
     placeBridgesH(t, cols, rows, rng, 2)
+  }
+}
+
+// ============ 螺旋: spiral mountain walls forcing circular movement ============
+function genSpiral(t: TerrainType[][], cols: number, rows: number, rng: SeededRandom, seed: number) {
+  const midX = Math.floor(cols / 2)
+  const midY = Math.floor(rows / 2)
+  const maxR = Math.min(cols, rows) * 0.42
+
+  // Draw a spiral wall from outside to inside
+  const turns = 2.5
+  const totalAngle = turns * Math.PI * 2
+  const steps = 300
+
+  for (let s = 0; s < steps; s++) {
+    const t2 = s / steps
+    const angle = t2 * totalAngle
+    const r = maxR * (1 - t2 * 0.85)
+    const cx = Math.round(midX + Math.cos(angle) * r)
+    const cy = Math.round(midY + Math.sin(angle) * r)
+
+    // Wall thickness: 1-2 cells
+    for (let dy = -1; dy <= 1; dy++) {
+      for (let dx = -1; dx <= 0; dx++) {
+        const wx = cx + dx, wy = cy + dy
+        if (wx >= 0 && wx < cols && wy >= 0 && wy < rows && !isInSafeZone(wx, wy, cols, rows)) {
+          t[wy][wx] = 'mountain'
+        }
+      }
+    }
+  }
+
+  // Clear the center
+  for (let dy = -4; dy <= 4; dy++) {
+    for (let dx = -4; dx <= 4; dx++) {
+      if (midX + dx >= 0 && midX + dx < cols && midY + dy >= 0 && midY + dy < rows)
+        t[midY + dy][midX + dx] = 'plain'
+    }
+  }
+
+  // Add gaps in the spiral walls (passages)
+  for (let i = 0; i < rng.int(5, 8); i++) {
+    const gAngle = rng.float(0, totalAngle)
+    const gR = maxR * (1 - (gAngle / totalAngle) * 0.85)
+    const gx = Math.round(midX + Math.cos(gAngle) * gR)
+    const gy = Math.round(midY + Math.sin(gAngle) * gR)
+    for (let dy = -2; dy <= 2; dy++) {
+      for (let dx = -2; dx <= 2; dx++) {
+        const wx = gx + dx, wy = gy + dy
+        if (wx >= 0 && wx < cols && wy >= 0 && wy < rows && t[wy][wx] === 'mountain')
+          t[wy][wx] = 'plain'
+      }
+    }
+  }
+
+  // Scatter forests in open areas
+  for (let y = 0; y < rows; y++) {
+    for (let x = 0; x < cols; x++) {
+      if (t[y][x] === 'plain' && !isInSafeZone(x, y, cols, rows)) {
+        const n = fbm(x, y, seed)
+        if (n > 0.6 && n < 0.7) t[y][x] = 'forest'
+      }
+    }
+  }
+}
+
+// ============ 绿洲: desert with central water source ============
+function genOasis(t: TerrainType[][], cols: number, rows: number, rng: SeededRandom, seed: number) {
+  const midX = Math.floor(cols / 2)
+  const midY = Math.floor(rows / 2)
+
+  // Scatter small mountain "dunes" everywhere
+  for (let y = 0; y < rows; y++) {
+    for (let x = 0; x < cols; x++) {
+      if (isInSafeZone(x, y, cols, rows)) continue
+      const n = fbm(x, y, seed)
+      if (n > 0.72) t[y][x] = 'mountain' // rocky outcrops
+    }
+  }
+
+  // Central oasis: water + surrounding forest
+  const oasisR = Math.min(cols, rows) * 0.1
+  for (let y = 0; y < rows; y++) {
+    for (let x = 0; x < cols; x++) {
+      const dx = x - midX, dy = y - midY
+      const dist = Math.sqrt(dx * dx + dy * dy)
+      const noise = smoothNoise(x, y, 4, seed + 300) * 2
+      if (dist < oasisR * 0.5 + noise) {
+        t[y][x] = 'river' // water
+      } else if (dist < oasisR + noise) {
+        t[y][x] = 'forest' // vegetation ring
+      }
+    }
+  }
+
+  // Bridges across the oasis water
+  for (const angle of [0, Math.PI / 2, Math.PI, Math.PI * 1.5]) {
+    for (let r = 0; r < oasisR; r++) {
+      const bx = Math.round(midX + Math.cos(angle) * r)
+      const by = Math.round(midY + Math.sin(angle) * r)
+      if (bx >= 0 && bx < cols && by >= 0 && by < rows && t[by][bx] === 'river')
+        t[by][bx] = 'bridge'
+    }
+  }
+
+  // Small secondary oases near corners
+  const corners = [
+    [Math.floor(cols * 0.25), Math.floor(rows * 0.25)],
+    [Math.floor(cols * 0.75), Math.floor(rows * 0.75)],
+  ]
+  for (const [cx, cy] of corners) {
+    if (rng.chance(0.7)) {
+      for (let dy = -3; dy <= 3; dy++) {
+        for (let dx = -3; dx <= 3; dx++) {
+          if (dx * dx + dy * dy > 9) continue
+          const x = cx + dx, y = cy + dy
+          if (x >= 0 && x < cols && y >= 0 && y < rows && !isInSafeZone(x, y, cols, rows)) {
+            t[y][x] = dx * dx + dy * dy <= 2 ? 'river' : 'forest'
+          }
+        }
+      }
+    }
+  }
+}
+
+// ============ 冰河: frozen rivers as passable bridges, mountain shores ============
+function genFrozenRiver(t: TerrainType[][], cols: number, rows: number, rng: SeededRandom, seed: number) {
+  // Two major frozen rivers crossing the map
+  // River 1: horizontal
+  let ry = Math.floor(rows * 0.35)
+  for (let x = 0; x < cols; x++) {
+    for (let dy = -1; dy <= 1; dy++) {
+      const y = ry + dy
+      if (y >= 0 && y < rows && !isInSafeZone(x, y, cols, rows)) {
+        t[y][x] = 'bridge' // frozen = passable but slow
+      }
+    }
+    if (rng.chance(0.2)) ry += rng.int(-1, 1)
+    ry = Math.max(SAFE_CELLS + 3, Math.min(rows - SAFE_CELLS - 3, ry))
+  }
+
+  // River 2: vertical
+  let rx = Math.floor(cols * 0.6)
+  for (let y = 0; y < rows; y++) {
+    for (let dx = -1; dx <= 1; dx++) {
+      const x = rx + dx
+      if (x >= 0 && x < cols && !isInSafeZone(x, y, cols, rows)) {
+        t[y][x] = 'bridge'
+      }
+    }
+    if (rng.chance(0.2)) rx += rng.int(-1, 1)
+    rx = Math.max(SAFE_CELLS + 3, Math.min(cols - SAFE_CELLS - 3, rx))
+  }
+
+  // Mountain shores along frozen rivers
+  for (let y = 0; y < rows; y++) {
+    for (let x = 0; x < cols; x++) {
+      if (t[y][x] !== 'bridge' || isInSafeZone(x, y, cols, rows)) continue
+      // Check neighbors: if plain, maybe add mountain shore
+      const dirs = [[-1, 0], [1, 0], [0, -1], [0, 1]]
+      for (const [dx, dy] of dirs) {
+        const nx = x + dx, ny = y + dy
+        if (nx >= 0 && nx < cols && ny >= 0 && ny < rows && t[ny][nx] === 'plain') {
+          if (rng.chance(0.15) && !isInSafeZone(nx, ny, cols, rows)) t[ny][nx] = 'mountain'
+        }
+      }
+    }
+  }
+
+  // Forests in the quadrants between rivers
+  for (let y = 0; y < rows; y++) {
+    for (let x = 0; x < cols; x++) {
+      if (t[y][x] !== 'plain' || isInSafeZone(x, y, cols, rows)) continue
+      const n = fbm(x, y, seed)
+      if (n > 0.5 && n < 0.63) t[y][x] = 'forest'
+    }
+  }
+}
+
+// ============ 斗兽场: circular arena with tiered walls ============
+function genArena(t: TerrainType[][], cols: number, rows: number, _rng: SeededRandom, seed: number) {
+  const midX = Math.floor(cols / 2)
+  const midY = Math.floor(rows / 2)
+  const outerR = Math.min(cols, rows) * 0.4
+  const innerR = outerR * 0.75
+  const pitR = outerR * 0.45
+
+  for (let y = 0; y < rows; y++) {
+    for (let x = 0; x < cols; x++) {
+      if (isInSafeZone(x, y, cols, rows)) continue
+      const dx = x - midX, dy = y - midY
+      const dist = Math.sqrt(dx * dx + dy * dy)
+      const noise = smoothNoise(x, y, 6, seed) * 1.5
+
+      if (dist > outerR + noise) {
+        // Outside arena — forest spectators
+        const n = fbm(x, y, seed + 400)
+        if (n > 0.5 && n < 0.65) t[y][x] = 'forest'
+      } else if (dist > innerR + noise) {
+        // Outer wall tier
+        t[y][x] = 'mountain'
+      } else if (dist > pitR + noise && dist < pitR + 2 + noise) {
+        // Inner wall tier (lower)
+        t[y][x] = 'wall'
+      }
+      // Inside pit = plain (battle arena)
+    }
+  }
+
+  // 4 entrance gates through the walls
+  for (const angle of [0, Math.PI / 2, Math.PI, Math.PI * 1.5]) {
+    for (let r = pitR - 2; r <= outerR + 3; r++) {
+      for (let w = -2; w <= 2; w++) {
+        const gx = Math.round(midX + Math.cos(angle) * r + Math.cos(angle + Math.PI / 2) * w)
+        const gy = Math.round(midY + Math.sin(angle) * r + Math.sin(angle + Math.PI / 2) * w)
+        if (gx >= 0 && gx < cols && gy >= 0 && gy < rows) {
+          if (t[gy][gx] === 'mountain' || t[gy][gx] === 'wall') t[gy][gx] = 'plain'
+        }
+      }
+    }
+  }
+}
+
+// ============ 八卦阵: octagonal pattern with inner chambers ============
+function genBagua(t: TerrainType[][], cols: number, rows: number, rng: SeededRandom, seed: number) {
+  const midX = Math.floor(cols / 2)
+  const midY = Math.floor(rows / 2)
+
+  // Draw 8 radial walls from center outward (like spokes)
+  for (let spoke = 0; spoke < 8; spoke++) {
+    const angle = (Math.PI * 2 * spoke) / 8
+    const length = Math.min(cols, rows) * 0.32
+    for (let r = 5; r < length; r++) {
+      const wx = Math.round(midX + Math.cos(angle) * r)
+      const wy = Math.round(midY + Math.sin(angle) * r)
+      if (wx >= 0 && wx < cols && wy >= 0 && wy < rows && !isInSafeZone(wx, wy, cols, rows)) {
+        t[wy][wx] = 'mountain'
+      }
+    }
+  }
+
+  // Concentric ring walls at 2 radii
+  for (const ringR of [Math.min(cols, rows) * 0.15, Math.min(cols, rows) * 0.28]) {
+    for (let a = 0; a < 360; a++) {
+      const angle = (a * Math.PI) / 180
+      const rx = Math.round(midX + Math.cos(angle) * ringR)
+      const ry = Math.round(midY + Math.sin(angle) * ringR)
+      if (rx >= 0 && rx < cols && ry >= 0 && ry < rows && !isInSafeZone(rx, ry, cols, rows)) {
+        t[ry][rx] = 'mountain'
+      }
+    }
+  }
+
+  // Open gates at every other spoke intersection with rings
+  for (let spoke = 0; spoke < 8; spoke += 2) {
+    const angle = (Math.PI * 2 * spoke) / 8
+    for (const ringR of [Math.min(cols, rows) * 0.15, Math.min(cols, rows) * 0.28]) {
+      for (let w = -2; w <= 2; w++) {
+        const gx = Math.round(midX + Math.cos(angle) * ringR + Math.cos(angle + Math.PI / 2) * w)
+        const gy = Math.round(midY + Math.sin(angle) * ringR + Math.sin(angle + Math.PI / 2) * w)
+        if (gx >= 0 && gx < cols && gy >= 0 && gy < rows && t[gy][gx] === 'mountain')
+          t[gy][gx] = 'plain'
+      }
+    }
+    // Clear spoke gaps too
+    for (let r = 3; r < Math.min(cols, rows) * 0.32; r += rng.int(4, 7)) {
+      for (let w = -1; w <= 1; w++) {
+        const gx = Math.round(midX + Math.cos(angle) * r)
+        const gy = Math.round(midY + Math.sin(angle) * r + w)
+        if (gx >= 0 && gx < cols && gy >= 0 && gy < rows && t[gy][gx] === 'mountain')
+          t[gy][gx] = 'plain'
+      }
+    }
+  }
+
+  // Center clearing
+  for (let dy = -3; dy <= 3; dy++) {
+    for (let dx = -3; dx <= 3; dx++) {
+      if (midX + dx >= 0 && midX + dx < cols && midY + dy >= 0 && midY + dy < rows)
+        t[midY + dy][midX + dx] = 'plain'
+    }
+  }
+
+  // Forest in some chambers
+  for (let y = 0; y < rows; y++) {
+    for (let x = 0; x < cols; x++) {
+      if (t[y][x] === 'plain' && !isInSafeZone(x, y, cols, rows)) {
+        const n = fbm(x, y, seed + 800)
+        if (n > 0.6 && n < 0.68) t[y][x] = 'forest'
+      }
+    }
   }
 }
 

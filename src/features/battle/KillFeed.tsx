@@ -2,25 +2,45 @@ import { useGameStore } from '../../store/gameStore'
 
 export function KillFeed() {
   const killFeed = useGameStore((s) => s.killFeed)
-
-  if (killFeed.length === 0) return null
+  const dramaticEvent = useGameStore((s) => s.dramaticEvent)
+  const autoSlowMo = useGameStore((s) => s.autoSlowMo)
 
   return (
-    <div className="absolute top-1 left-1/2 -translate-x-1/2 z-10 flex flex-col items-center gap-0.5 pointer-events-none">
-      {killFeed.map((item, i) => (
+    <div className="absolute top-0 left-0 right-0 z-10 flex flex-col items-center pointer-events-none">
+      {/* Dramatic event banner — big centered announcement */}
+      {dramaticEvent && autoSlowMo > 0 && (
         <div
-          key={`${item.tick}-${i}`}
-          className="px-3 py-0.5 rounded text-xs font-medium backdrop-blur-sm whitespace-nowrap"
+          className="mt-2 px-4 sm:px-6 py-1.5 sm:py-2 rounded-lg text-sm sm:text-base font-bold text-center backdrop-blur-md animate-pulse"
           style={{
-            color: item.color,
-            backgroundColor: 'rgba(0,0,0,0.7)',
-            opacity: 1 - i * 0.2,
-            fontSize: i === 0 ? '12px' : '10px',
+            color: dramaticEvent.color,
+            backgroundColor: 'rgba(0,0,0,0.8)',
+            borderColor: dramaticEvent.color + '44',
+            borderWidth: 1,
+            textShadow: `0 0 10px ${dramaticEvent.color}66`,
           }}
         >
-          {item.message}
+          {dramaticEvent.message}
         </div>
-      ))}
+      )}
+
+      {/* Regular kill feed */}
+      {killFeed.length > 0 && (
+        <div className="flex flex-col items-center gap-0.5 mt-1">
+          {killFeed.map((item, i) => (
+            <div
+              key={`${item.tick}-${i}`}
+              className="px-2 sm:px-3 py-0.5 rounded text-[10px] sm:text-xs backdrop-blur-sm whitespace-nowrap"
+              style={{
+                color: item.color,
+                backgroundColor: 'rgba(0,0,0,0.6)',
+                opacity: 1 - i * 0.2,
+              }}
+            >
+              {item.message}
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   )
 }

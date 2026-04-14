@@ -9,6 +9,7 @@ import { SeededRandom } from './utils/random'
 import { generateMap, MapTemplate } from './utils/mapgen'
 import type { GameSettings } from '../store/gameStore'
 import { FACTION_NAMES as fNames } from '../config/factionDisplay'
+import { FormationType, FORMATIONS } from '../config/formationDefs'
 import { createBattleUnit, generateSpawnPositions } from './utils/unitFactory'
 import { movementSystem } from './systems/movement'
 import { targetSystem } from './systems/target'
@@ -39,7 +40,7 @@ export class BattleEngine {
   private mapTemplate: MapTemplate
   private settings: GameSettings
 
-  constructor(generals: General[], mode: BattleMode, seed: number, mapTemplate: MapTemplate = 'random', settings?: GameSettings) {
+  constructor(generals: General[], mode: BattleMode, seed: number, mapTemplate: MapTemplate = 'random', settings?: GameSettings, formation: FormationType = 'none') {
     this.generals = generals
     this.mapTemplate = mapTemplate
     this.settings = settings ?? {
@@ -76,6 +77,22 @@ export class BattleEngine {
 
     const positions = generateSpawnPositions(generals, mode, map, this.rng, defendingFaction)
     const units = generals.map((g, i) => createBattleUnit(g, positions[i]))
+
+    // Apply formation buffs
+    const formDef = FORMATIONS[formation]
+    if (formDef && formDef.id !== 'none') {
+      for (const unit of units) {
+        const b = formDef.buffs
+        if (b.atkMult) unit.atk = Math.round(unit.atk * b.atkMult)
+        if (b.defMult) unit.def = Math.round(unit.def * b.defMult)
+        if (b.speedMult) unit.speed = Math.round(unit.speed * b.speedMult)
+        if (b.rangeMult) unit.range = Math.round(unit.range * b.rangeMult)
+        if (b.moraleMult) {
+          unit.morale = Math.min(100, Math.round(unit.morale * b.moraleMult))
+          unit.maxMorale = Math.min(100, Math.round(unit.maxMorale * b.moraleMult))
+        }
+      }
+    }
 
     this.state = {
       tick: 0,
@@ -147,7 +164,7 @@ export class BattleEngine {
     updateChargeDistance(this.state.units)
 
     // 2. Skill
-    const skillEvents = skillSystem(this.state.units, this.state.tick, this.rng)
+    const skillEvents = skillSystem(this.state.units, this.state.tick, this.rng, this.state.map)
     newEvents.push(...skillEvents)
 
     // 3. Duels
@@ -288,8 +305,9 @@ export class BattleEngine {
     }
 
     this.state.events.push(...newEvents)
-    if (this.state.events.length > 500) {
-      this.state.events = this.state.events.slice(-500)
+    if (this.state.events.length > 600) {
+      // Trim less frequently, larger chunks (avoids creating new array every tick)
+      this.state.events = this.state.events.slice(-400)
     }
 
     return newEvents

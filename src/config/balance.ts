@@ -80,29 +80,32 @@ export const BALANCE = {
   STRATEGY_TARGET_BONUS: 0.005,
   STRATEGY_FLANK_CHANCE: 0.003,
   POLITICS_REGEN: 0.002,
-  MARTIAL_MELEE_BONUS: 0.005,   // martial → melee damage (buffed from 0.004)
+  MARTIAL_MELEE_BONUS: 0.004,   // reduced (was 0.005) → martial 100 = +40%
   ACHIEVEMENT_PRESTIGE: 0.003,
   CHARISMA_AURA: 0.003,
 
+  // Strategy ranged bonus (NEW — ranged equivalent of martial)
+  STRATEGY_RANGED_BONUS: 0.004,   // strategy → ranged damage bonus
+
   // Martial warrior mechanics
-  CLEAVE_MARTIAL_THRESHOLD: 80,    // martial 80+ can hit multiple targets
+  CLEAVE_MARTIAL_THRESHOLD: 85,    // raised (was 80)
   CLEAVE_MAX_TARGETS: 3,
-  CLEAVE_DAMAGE_FALLOFF: 0.55,     // secondary targets take 55% damage
+  CLEAVE_DAMAGE_FALLOFF: 0.4,      // reduced (was 0.55)
   CLEAVE_RANGE: 45,
 
-  DODGE_SPEED_FACTOR: 0.0015,      // speed → dodge chance
-  DODGE_MARTIAL_FACTOR: 0.001,     // martial → dodge chance
-  DODGE_MAX: 0.25,                 // max 25% dodge
+  DODGE_SPEED_FACTOR: 0.001,       // reduced (was 0.0015)
+  DODGE_MARTIAL_FACTOR: 0.0008,    // reduced (was 0.001)
+  DODGE_MAX: 0.18,                 // reduced (was 0.25)
 
-  COUNTER_MARTIAL_THRESHOLD: 85,   // auto-counter melee attacks
-  COUNTER_DAMAGE_RATIO: 0.35,
-  COUNTER_CHANCE: 0.3,
+  COUNTER_MARTIAL_THRESHOLD: 88,   // raised (was 85)
+  COUNTER_DAMAGE_RATIO: 0.3,       // reduced (was 0.35)
+  COUNTER_CHANCE: 0.2,             // reduced (was 0.3)
 
-  INTIMIDATION_MARTIAL_THRESHOLD: 85,
-  INTIMIDATION_RANGE: 65,
-  INTIMIDATION_ATK_PENALTY: 0.12,  // -12% ATK for nearby enemies
+  INTIMIDATION_MARTIAL_THRESHOLD: 88, // raised (was 85)
+  INTIMIDATION_RANGE: 55,             // reduced (was 65)
+  INTIMIDATION_ATK_PENALTY: 0.08,     // reduced (was 0.12)
 
-  FORMATION_BREAK_FACTOR: 0.003,   // high martial reduces enemy formation def
+  FORMATION_BREAK_FACTOR: 0.0015,  // halved (was 0.003)
 
   // Combat
   DAMAGE_VARIANCE: 0.15,

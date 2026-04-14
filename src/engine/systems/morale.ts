@@ -14,6 +14,14 @@ export function moraleSystem(
   const newlyRouted: BattleUnit[] = []
   const wm = getWeatherModifiers(weather)
 
+  // Pre-compute faction alive counts (avoid O(n) per unit)
+  const factionAlive = new Map<string, number>()
+  for (const u of units) {
+    if (u.state === 'dead') continue
+    factionAlive.set(u.faction, (factionAlive.get(u.faction) ?? 0) + 1)
+  }
+  const totalAlive = units.filter((u) => u.state !== 'dead').length
+
   for (const unit of units) {
     if (unit.state === 'dead') continue
 
@@ -39,12 +47,14 @@ export function moraleSystem(
       // Attack/Defense buff applied via the attack system check
     }
 
-    // === Charisma Aura ===
-    for (const ally of units) {
-      if (ally.id === unit.id || ally.faction !== unit.faction || ally.state === 'dead') continue
-      const dist = distance(unit.position, ally.position)
-      if (dist < BALANCE.MORALE_CHARISMA_AURA_RANGE) {
-        ally.morale += unit.charisma * BALANCE.CHARISMA_AURA * 0.05
+    // === Charisma Aura (throttled: only high charisma, every 5 ticks) ===
+    if (unit.charisma >= 60 && tick % 5 === 0) {
+      for (const ally of units) {
+        if (ally.id === unit.id || ally.faction !== unit.faction || ally.state === 'dead') continue
+        const dist = distance(unit.position, ally.position)
+        if (dist < BALANCE.MORALE_CHARISMA_AURA_RANGE) {
+          ally.morale += unit.charisma * BALANCE.CHARISMA_AURA * 0.25 // compensate for throttle
+        }
       }
     }
 
@@ -76,13 +86,9 @@ export function moraleSystem(
     // === Weather morale drain ===
     unit.morale -= wm.moraleDrain
 
-    // === Outnumbered penalty ===
-    const aliveAllies = units.filter(
-      (u) => u.faction === unit.faction && u.state !== 'dead' && u.id !== unit.id
-    ).length
-    const aliveEnemies = units.filter(
-      (u) => u.faction !== unit.faction && u.state !== 'dead'
-    ).length
+    // === Outnumbered penalty (using pre-computed counts) ===
+    const aliveAllies = (factionAlive.get(unit.faction) ?? 0) - 1 // exclude self
+    const aliveEnemies = totalAlive - (factionAlive.get(unit.faction) ?? 0)
     if (aliveEnemies > 0 && aliveAllies === 0) {
       unit.morale -= 0.4 // alone against enemies
     } else if (aliveEnemies > aliveAllies * 2) {

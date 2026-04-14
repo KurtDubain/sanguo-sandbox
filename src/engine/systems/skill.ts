@@ -1,13 +1,15 @@
-import { BattleUnit, GameEvent } from '../../types'
+import { BattleUnit, GameEvent, BattleMap } from '../../types'
 import { BALANCE } from '../../config/balance'
 import { SKILLS } from '../../config/skills'
 import { distance } from '../utils/math'
 import { SeededRandom } from '../utils/random'
+import { igniteForest } from './terrainInteraction'
 
 export function skillSystem(
   units: BattleUnit[],
   tick: number,
   rng: SeededRandom,
+  map?: BattleMap,
 ): GameEvent[] {
   const events: GameEvent[] = []
 
@@ -62,7 +64,7 @@ export function skillSystem(
           )
           break
         case 'area':
-          // Use area skills when enemies are clustered
+          // Use area skills when enemies are nearby (lowered from 2 to 1)
           {
             const nearbyEnemies = units.filter(
               (u) =>
@@ -70,7 +72,7 @@ export function skillSystem(
                 u.state !== 'dead' &&
                 distance(unit.position, u.position) < skillDef.range
             )
-            shouldAttempt = nearbyEnemies.length >= 2
+            shouldAttempt = nearbyEnemies.length >= 1
           }
           break
       }
@@ -122,6 +124,10 @@ export function skillSystem(
             for (const target of targets) {
               applyEffect(unit, target, effect, events, tick, skillDef.name)
             }
+            // Fire skills ignite nearby forest terrain
+            if (effect.type === 'damage' && skillDef.id === 'fire_attack' && map) {
+              igniteForest(map, unit.position.x, unit.position.y, radius)
+            }
             break
           }
         }
@@ -170,7 +176,7 @@ function applyEffect(
       break
     }
     case 'heal': {
-      const heal = Math.round(effect.value * (1 + source.politics * 0.005))
+      const heal = Math.round(effect.value * (1 + source.politics * 0.01 + source.charisma * 0.003))
       target.hp = Math.min(target.maxHp, target.hp + heal)
       break
     }

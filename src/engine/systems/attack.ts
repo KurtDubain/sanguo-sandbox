@@ -57,9 +57,11 @@ export function attackSystem(
     // === Base Attack Power ===
     let atkPower = unit.atk
 
-    // Martial bonus (especially for melee)
+    // Martial bonus (melee) or Strategy bonus (ranged)
     if (isMelee) {
       atkPower *= 1 + unit.martial * BALANCE.MARTIAL_MELEE_BONUS
+    } else {
+      atkPower *= 1 + unit.strategy * BALANCE.STRATEGY_RANGED_BONUS
     }
 
     // Attack buffs

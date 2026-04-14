@@ -3,6 +3,7 @@ import { BattleEngine } from '../engine'
 import { ALL_GENERALS, GOD_GENERALS, ALL_GENERALS_WITH_GODS } from '../config/generals'
 import { VFXManager } from '../engine/utils/vfx'
 import { MapTemplate } from '../engine/utils/mapgen'
+import { FormationType } from '../config/formationDefs'
 import { saveMatchResult } from '../engine/utils/history'
 import {
   General,
@@ -46,6 +47,7 @@ interface GameStore {
   selectedGeneralIds: string[]
   battleMode: BattleMode
   mapTemplate: MapTemplate
+  formation: FormationType
   seed: number
   settings: GameSettings
 
@@ -53,6 +55,8 @@ interface GameStore {
   battleState: BattleState | null
   recentEvents: GameEvent[]
   vfxTick: number
+  dramaticEvent: { message: string; color: string; tick: number } | null
+  autoSlowMo: number // ticks remaining of auto slow-mo
 
   isPanelOpen: boolean
   activeTab: 'config' | 'log' | 'result' | 'batch' | 'settings' | 'history' | 'guide'
@@ -70,6 +74,7 @@ interface GameStore {
   selectFaction: (faction: string) => void
   setBattleMode: (mode: BattleMode) => void
   setMapTemplate: (t: MapTemplate) => void
+  setFormation: (f: FormationType) => void
   setSeed: (seed: number) => void
   randomizeSeed: () => void
   setActiveTab: (tab: 'config' | 'log' | 'result' | 'batch' | 'settings' | 'history' | 'guide') => void
@@ -161,6 +166,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
   selectedGeneralIds: ALL_GENERALS.map((g) => g.id),
   battleMode: 'faction_battle',
   mapTemplate: 'random' as MapTemplate,
+  formation: 'none' as FormationType,
   seed: Math.floor(Math.random() * 100000),
   settings: { ...DEFAULT_SETTINGS },
 
@@ -168,6 +174,8 @@ export const useGameStore = create<GameStore>((set, get) => ({
   battleState: null,
   recentEvents: [],
   vfxTick: 0,
+  dramaticEvent: null,
+  autoSlowMo: 0,
 
   isPanelOpen: true,
   activeTab: 'config',
@@ -193,6 +201,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
 
   setBattleMode: (mode) => set({ battleMode: mode }),
   setMapTemplate: (t) => set({ mapTemplate: t }),
+  setFormation: (f) => set({ formation: f }),
   setSeed: (seed) => set({ seed }),
   randomizeSeed: () => set({ seed: Math.floor(Math.random() * 100000) }),
   setActiveTab: (tab) => set({ activeTab: tab }),
@@ -222,7 +231,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
     if (generals.length < 2) return
 
     vfxManager.clear()
-    const engine = new BattleEngine(generals, battleMode, seed, mapTemplate, get().settings)
+    const engine = new BattleEngine(generals, battleMode, seed, mapTemplate, get().settings, get().formation)
     set({
       engine,
       battleState: engine.getState(),
@@ -299,6 +308,39 @@ export const useGameStore = create<GameStore>((set, get) => ({
 
     vfxManager.tick()
 
+    // Dramatic events: detect key moments for slow-mo + announcement
+    let dramatic: { message: string; color: string; tick: number } | null = null
+    let slowMoTicks = get().autoSlowMo > 0 ? get().autoSlowMo - 1 : 0
+
+    for (const ev of newEvents) {
+      // Commander killed
+      if (ev.type === 'morale_rout' && ev.message.includes('主帅')) {
+        dramatic = { message: ev.message, color: '#ff4444', tick: state.tick }
+        slowMoTicks = 30
+      }
+      // Duel started
+      if (ev.type === 'duel' && ev.message.includes('开始')) {
+        dramatic = { message: ev.message, color: '#ffaa22', tick: state.tick }
+        slowMoTicks = 20
+      }
+      // Duel kill
+      if (ev.type === 'kill' && ev.message.includes('单挑斩杀')) {
+        dramatic = { message: ev.message, color: '#ff2222', tick: state.tick }
+        slowMoTicks = 25
+      }
+      // Last survivor
+      const alive = state.units.filter((u) => u.state !== 'dead')
+      if (alive.length <= 3 && alive.length > 0 && !dramatic) {
+        dramatic = { message: `仅剩 ${alive.length} 人存活！`, color: '#ffcc44', tick: state.tick }
+        slowMoTicks = Math.max(slowMoTicks, 15)
+      }
+      // Battle end
+      if (ev.type === 'battle_end') {
+        dramatic = { message: ev.message, color: '#ffdd44', tick: state.tick }
+        slowMoTicks = 40
+      }
+    }
+
     // Update kill feed
     const killEvents = newEvents.filter((e) =>
       e.type === 'kill' || e.type === 'weather_change' || e.type === 'battle_end' ||
@@ -322,6 +364,8 @@ export const useGameStore = create<GameStore>((set, get) => ({
       recentEvents: newEvents,
       vfxTick: get().vfxTick + 1,
       killFeed: newFeed,
+      dramaticEvent: dramatic ?? (get().dramaticEvent && state.tick - get().dramaticEvent!.tick < 60 ? get().dramaticEvent : null),
+      autoSlowMo: slowMoTicks,
     })
 
     if (state.phase === 'finished' && state.result) {

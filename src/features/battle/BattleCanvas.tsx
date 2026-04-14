@@ -195,6 +195,19 @@ export function BattleCanvas() {
       ctx.drawImage(terrainCacheRef.current, 0, 0)
     }
 
+    // === Battle zone glow: highlight areas with most combat ===
+    const attacking = units.filter((u) => u.state === 'attacking')
+    if (attacking.length >= 4) {
+      // Find cluster center of attacking units
+      const cx = attacking.reduce((s, u) => s + u.position.x, 0) / attacking.length
+      const cy = attacking.reduce((s, u) => s + u.position.y, 0) / attacking.length
+      const gradient = ctx.createRadialGradient(cx, cy, 20, cx, cy, 120)
+      gradient.addColorStop(0, 'rgba(255, 120, 50, 0.06)')
+      gradient.addColorStop(1, 'rgba(255, 120, 50, 0)')
+      ctx.fillStyle = gradient
+      ctx.fillRect(cx - 120, cy - 120, 240, 240)
+    }
+
     // === VFX: Unit trails (before units) ===
     for (const [, trail] of vfxManager.trails) {
       if (trail.points.length < 2) continue
@@ -657,20 +670,23 @@ export function BattleCanvas() {
 
   // Click to select unit — with viewport transform
   const handleClick = useCallback((e: React.MouseEvent<HTMLCanvasElement>) => {
-    if (isDragging.current) return // don't select if we were dragging
+    if (isDragging.current) { isDragging.current = false; return }
+    selectUnitAtScreen(e.clientX, e.clientY)
+  }, [battleState, selectUnit, viewport])
+
+  const selectUnitAtScreen = useCallback((clientX: number, clientY: number) => {
     if (!battleState) return
     const canvas = canvasRef.current
     if (!canvas) return
     const rect = canvas.getBoundingClientRect()
     const scaleX = canvas.width / rect.width
     const scaleY = canvas.height / rect.height
-    const screenX = (e.clientX - rect.left) * scaleX
-    const screenY = (e.clientY - rect.top) * scaleY
-    // Convert screen coords to world coords
+    const screenX = (clientX - rect.left) * scaleX
+    const screenY = (clientY - rect.top) * scaleY
     const world = screenToWorld(screenX, screenY, viewport)
 
     let nearest: string | null = null
-    let minDist = 25 / viewport.scale // adjust click radius for zoom
+    let minDist = 40 / viewport.scale // bigger click radius (was 25)
     for (const unit of battleState.units) {
       if (unit.state === 'dead') continue
       const dx = unit.position.x - world.x
@@ -706,7 +722,7 @@ export function BattleCanvas() {
     if (e.buttons !== 1) return
     const dx = e.clientX - lastDrag.current.x
     const dy = e.clientY - lastDrag.current.y
-    if (Math.abs(dx) > 3 || Math.abs(dy) > 3) isDragging.current = true
+    if (Math.abs(dx) > 8 || Math.abs(dy) > 8) isDragging.current = true // raised from 3 to 8
     const canvas = canvasRef.current
     if (!canvas) return
     const rect = canvas.getBoundingClientRect()
@@ -720,15 +736,21 @@ export function BattleCanvas() {
     lastDrag.current = { x: e.clientX, y: e.clientY }
   }, [])
 
-  // Touch support: pinch zoom + drag
+  // Touch support: tap to select, drag to pan, pinch to zoom
+  const touchStartPos = useRef({ x: 0, y: 0 })
+  const touchMoved = useRef(false)
+
   const handleTouchStart = useCallback((e: React.TouchEvent) => {
     if (e.touches.length === 2) {
       const dx = e.touches[0].clientX - e.touches[1].clientX
       const dy = e.touches[0].clientY - e.touches[1].clientY
       touchStartDist.current = Math.sqrt(dx * dx + dy * dy)
       touchStartScale.current = viewport.scale
+      touchMoved.current = true // pinch is not a tap
     } else if (e.touches.length === 1) {
       lastDrag.current = { x: e.touches[0].clientX, y: e.touches[0].clientY }
+      touchStartPos.current = { x: e.touches[0].clientX, y: e.touches[0].clientY }
+      touchMoved.current = false
     }
   }, [viewport.scale])
 
@@ -743,19 +765,34 @@ export function BattleCanvas() {
     } else if (e.touches.length === 1) {
       const dx = e.touches[0].clientX - lastDrag.current.x
       const dy = e.touches[0].clientY - lastDrag.current.y
-      const canvas = canvasRef.current
-      if (!canvas) return
-      const rect = canvas.getBoundingClientRect()
-      setViewport((vp) => ({
-        ...vp,
-        offsetX: vp.offsetX + dx * (canvas.width / rect.width),
-        offsetY: vp.offsetY + dy * (canvas.height / rect.height),
-      }))
+      // Check if moved enough to be a drag (not a tap)
+      const totalDx = e.touches[0].clientX - touchStartPos.current.x
+      const totalDy = e.touches[0].clientY - touchStartPos.current.y
+      if (Math.abs(totalDx) > 10 || Math.abs(totalDy) > 10) touchMoved.current = true
+
+      if (touchMoved.current) {
+        const canvas = canvasRef.current
+        if (!canvas) return
+        const rect = canvas.getBoundingClientRect()
+        setViewport((vp) => ({
+          ...vp,
+          offsetX: vp.offsetX + dx * (canvas.width / rect.width),
+          offsetY: vp.offsetY + dy * (canvas.height / rect.height),
+        }))
+      }
       lastDrag.current = { x: e.touches[0].clientX, y: e.touches[0].clientY }
     }
   }, [])
 
-  // Double click to reset viewport
+  // Touch end: if didn't move much, treat as tap to select unit
+  const handleTouchEnd = useCallback((e: React.TouchEvent) => {
+    if (!touchMoved.current && e.changedTouches.length === 1) {
+      const touch = e.changedTouches[0]
+      selectUnitAtScreen(touch.clientX, touch.clientY)
+    }
+  }, [selectUnitAtScreen])
+
+  // Double click/tap to reset viewport
   const handleDoubleClick = useCallback(() => {
     setViewport(DEFAULT_VIEWPORT)
   }, [])
@@ -769,6 +806,7 @@ export function BattleCanvas() {
       onMouseMove={handleMouseMove}
       onTouchStart={handleTouchStart}
       onTouchMove={handleTouchMove}
+      onTouchEnd={handleTouchEnd}
       onDoubleClick={handleDoubleClick}
       className="border border-gray-700 rounded-lg bg-[#0f1610] w-full h-full object-contain cursor-grab active:cursor-grabbing touch-none"
       style={{ maxHeight: '100%', aspectRatio: '3/2' }}

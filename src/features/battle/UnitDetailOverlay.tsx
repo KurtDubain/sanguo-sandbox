@@ -23,8 +23,9 @@ export function UnitDetailOverlay() {
 
   return (
     <div
-      className="absolute bottom-2 left-2 right-2 md:left-auto md:right-2 md:bottom-2 md:w-72
-        bg-gray-900/95 border border-gray-700 rounded-lg p-3 backdrop-blur-sm z-10"
+      className="absolute bottom-1 left-1 right-1 sm:bottom-2 sm:left-auto sm:right-2 sm:w-72
+        bg-gray-900/95 border border-gray-700 rounded-lg p-2 sm:p-3 backdrop-blur-sm z-10
+        max-h-[45vh] overflow-y-auto"
     >
       <button
         onClick={() => selectUnit(null)}

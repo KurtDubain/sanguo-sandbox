@@ -40,10 +40,13 @@ export function terrainInteractionSystem(
     }
   }
 
-  // Spread fire to adjacent forest cells
-  if (tick % 15 === 0 && activeFires.length > 0) {
+  // Spread fire to adjacent forest cells (capped at 80 active fires max)
+  const MAX_FIRES = 80
+  if (tick % 15 === 0 && activeFires.length > 0 && activeFires.length < MAX_FIRES) {
     const newFires: ActiveFire[] = []
+    const fireSet = new Set(activeFires.map((f) => `${f.col},${f.row}`))
     for (const fire of activeFires) {
+      if (activeFires.length + newFires.length >= MAX_FIRES) break
       const dirs = [[-1, 0], [1, 0], [0, -1], [0, 1]]
       for (const [dx, dy] of dirs) {
         const nc = fire.col + dx
@@ -55,9 +58,10 @@ export function terrainInteractionSystem(
             if (weather.type === 'wind') spreadChance += 0.15 * weather.intensity
             if (weather.type === 'rain') spreadChance -= 0.1 * weather.intensity
             if (rng.chance(Math.max(0, spreadChance))) {
-              if (!activeFires.some((f) => f.col === nc && f.row === nr) &&
-                  !newFires.some((f) => f.col === nc && f.row === nr)) {
+              const key = `${nc},${nr}`
+              if (!fireSet.has(key)) {
                 newFires.push({ col: nc, row: nr, age: 0, maxAge: rng.int(40, 80) })
+                fireSet.add(key)
               }
             }
           }
@@ -86,11 +90,12 @@ export function terrainInteractionSystem(
     }
   }
 
-  // === Rain flooding: rivers widen slightly during rain ===
-  if (weather.type === 'rain' && tick % 100 === 0 && weather.intensity > 0.6) {
+  // === Rain flooding: rivers widen slightly during rain (heavily throttled) ===
+  if (weather.type === 'rain' && tick % 200 === 0 && weather.intensity > 0.6) {
     let flooded = 0
-    for (let row = 0; row < map.terrain.length; row++) {
-      for (let col = 0; col < map.terrain[0].length; col++) {
+    const maxFlood = 5 // max cells flooded per check
+    for (let row = 0; row < map.terrain.length && flooded < maxFlood; row++) {
+      for (let col = 0; col < map.terrain[0].length && flooded < maxFlood; col++) {
         if (map.terrain[row][col] !== 'river') continue
         // Check neighbors — if plain, small chance to flood
         const dirs = [[-1, 0], [1, 0], [0, -1], [0, 1]]

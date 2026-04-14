@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react'
 import { useGameStore } from '../../store/gameStore'
 import { MAP_TEMPLATE_NAMES, MapTemplate } from '../../engine/utils/mapgen'
+import { FORMATION_LIST, FormationType } from '../../config/formationDefs'
 
 const WEATHER_ICONS: Record<string, string> = {
   clear: '☀', rain: '🌧', fog: '🌫', wind: '💨',
@@ -13,6 +14,7 @@ export function ControlBar() {
     seed,
     battleMode,
     mapTemplate,
+    formation,
     initBattle,
     startBattle,
     pauseBattle,
@@ -23,6 +25,7 @@ export function ControlBar() {
     setSeed,
     setBattleMode,
     setMapTemplate,
+    setFormation,
     randomizeSeed,
     selectedGeneralIds,
   } = useGameStore()
@@ -30,13 +33,16 @@ export function ControlBar() {
   const tickIntervalRef = useRef<number | null>(null)
   const phase = battleState?.phase
 
+  const autoSlowMo = useGameStore((s) => s.autoSlowMo)
+
   useEffect(() => {
     if (phase === 'running') {
-      // For speeds < 1, we increase interval; for > 1, we tick multiple times
-      const interval = simulationSpeed < 1
-        ? Math.floor(100 / simulationSpeed) // 0.5x → 200ms
-        : Math.max(10, Math.floor(100 / simulationSpeed))
-      const ticksPerFrame = simulationSpeed >= 1 ? Math.max(1, Math.floor(simulationSpeed)) : 1
+      // Auto slow-mo reduces effective speed
+      const effectiveSpeed = autoSlowMo > 0 ? Math.min(simulationSpeed, 0.5) : simulationSpeed
+      const interval = effectiveSpeed < 1
+        ? Math.floor(100 / effectiveSpeed)
+        : Math.max(10, Math.floor(100 / effectiveSpeed))
+      const ticksPerFrame = effectiveSpeed >= 1 ? Math.max(1, Math.floor(effectiveSpeed)) : 1
 
       tickIntervalRef.current = window.setInterval(() => {
         for (let i = 0; i < ticksPerFrame; i++) {
@@ -52,7 +58,7 @@ export function ControlBar() {
     return () => {
       if (tickIntervalRef.current) clearInterval(tickIntervalRef.current)
     }
-  }, [phase, simulationSpeed, tickBattle])
+  }, [phase, simulationSpeed, tickBattle, autoSlowMo])
 
   const handleStartOrResume = () => {
     if (!battleState) {
@@ -68,10 +74,10 @@ export function ControlBar() {
   const weather = battleState?.weather
 
   return (
-    <div className="flex flex-wrap items-center gap-2 p-2 bg-gray-900/80 border border-gray-700 rounded-lg text-xs">
+    <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 p-1.5 sm:p-2 bg-gray-900/80 border border-gray-700 rounded-lg text-[10px] sm:text-xs">
       {/* Mode */}
       <select
-        className="bg-gray-800 text-gray-200 px-1.5 py-1 rounded border border-gray-600 text-xs"
+        className="bg-gray-800 text-gray-200 px-1 sm:px-1.5 py-0.5 sm:py-1 rounded border border-gray-600 text-[10px] sm:text-xs max-w-[70px] sm:max-w-none"
         value={battleMode}
         onChange={(e) => setBattleMode(e.target.value as any)}
         disabled={phase === 'running'}
@@ -83,7 +89,7 @@ export function ControlBar() {
 
       {/* Map template */}
       <select
-        className="bg-gray-800 text-gray-200 px-1.5 py-1 rounded border border-gray-600 text-xs"
+        className="bg-gray-800 text-gray-200 px-1 sm:px-1.5 py-0.5 sm:py-1 rounded border border-gray-600 text-[10px] sm:text-xs max-w-[60px] sm:max-w-none"
         value={mapTemplate}
         onChange={(e) => setMapTemplate(e.target.value as MapTemplate)}
         disabled={phase === 'running'}
@@ -93,12 +99,25 @@ export function ControlBar() {
         ))}
       </select>
 
+      {/* Formation */}
+      <select
+        className="bg-gray-800 text-gray-200 px-1 sm:px-1.5 py-0.5 sm:py-1 rounded border border-gray-600 text-[10px] sm:text-xs max-w-[65px] sm:max-w-none"
+        value={formation}
+        onChange={(e) => setFormation(e.target.value as FormationType)}
+        disabled={phase === 'running'}
+        title="阵法"
+      >
+        {FORMATION_LIST.map((f) => (
+          <option key={f.id} value={f.id}>{f.name}</option>
+        ))}
+      </select>
+
       {/* Seed */}
       <div className="flex items-center gap-1">
         <span className="text-gray-500 hidden sm:inline">Seed</span>
         <input
           type="number"
-          className="bg-gray-800 text-gray-200 px-1.5 py-1 rounded border border-gray-600 w-16 text-xs"
+          className="bg-gray-800 text-gray-200 px-1 sm:px-1.5 py-0.5 sm:py-1 rounded border border-gray-600 w-12 sm:w-16 text-[10px] sm:text-xs"
           value={seed}
           onChange={(e) => setSeed(parseInt(e.target.value) || 0)}
           disabled={phase === 'running'}
@@ -119,7 +138,7 @@ export function ControlBar() {
         <button
           onClick={() => initBattle()}
           disabled={selectedGeneralIds.length < 2}
-          className="px-2.5 py-1 bg-blue-700 hover:bg-blue-600 text-white rounded disabled:opacity-50"
+          className="px-1.5 sm:px-2.5 py-0.5 sm:py-1 bg-blue-700 hover:bg-blue-600 text-white rounded disabled:opacity-50"
         >
           布阵
         </button>
@@ -129,14 +148,14 @@ export function ControlBar() {
           {phase !== 'running' ? (
             <button
               onClick={handleStartOrResume}
-              className="px-2.5 py-1 bg-green-700 hover:bg-green-600 text-white rounded"
+              className="px-1.5 sm:px-2.5 py-0.5 sm:py-1 bg-green-700 hover:bg-green-600 text-white rounded"
             >
               {phase === 'setup' ? '⚔ 开战' : '▶ 继续'}
             </button>
           ) : (
             <button
               onClick={pauseBattle}
-              className="px-2.5 py-1 bg-yellow-700 hover:bg-yellow-600 text-white rounded"
+              className="px-1.5 sm:px-2.5 py-0.5 sm:py-1 bg-yellow-700 hover:bg-yellow-600 text-white rounded"
             >
               ⏸ 暂停
             </button>
@@ -146,7 +165,7 @@ export function ControlBar() {
       {battleState && (
         <button
           onClick={resetBattle}
-          className="px-2.5 py-1 bg-red-800 hover:bg-red-700 text-white rounded"
+          className="px-1.5 sm:px-2.5 py-0.5 sm:py-1 bg-red-800 hover:bg-red-700 text-white rounded"
         >
           ↻ 重开
         </button>

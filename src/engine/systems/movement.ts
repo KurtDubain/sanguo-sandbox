@@ -147,6 +147,16 @@ export function movementSystem(
   if (tick % 3 === 0) {
     spatialCollision(units, map)
   }
+
+  // ===== Cleanup dead unit caches (every 60 ticks) =====
+  if (tick % 60 === 0) {
+    for (const unit of units) {
+      if (unit.state === 'dead') {
+        pathCache.delete(unit.id)
+        stuckTracker.delete(unit.id)
+      }
+    }
+  }
 }
 
 // ======== Smart Movement: direct → ray-check → A* → wall-slide ========
@@ -233,11 +243,9 @@ function followPath(
 
   // Update index
   cache.waypointIdx = idx
-  cache.computedTick = cache.computedTick // keep original
 
   if (idx >= cache.waypoints.length) {
-    // Path exhausted — try stepping toward final goal
-    pathCache.delete('') // don't actually delete, let it expire
+    // Path exhausted
     const step = moveToward(pos, goal, speed)
     if (isPassable(map, step.x, step.y)) return step
     return null
@@ -248,8 +256,7 @@ function followPath(
   const step = moveToward(pos, wp, speed)
   if (isPassable(map, step.x, step.y)) return step
 
-  // Waypoint blocked — path is broken, need recompute
-  pathCache.delete(cache.goalPos.toString()) // clear on next frame
+  // Waypoint blocked — need recompute
   return null
 }
 
