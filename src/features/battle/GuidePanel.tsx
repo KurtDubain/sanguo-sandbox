@@ -128,7 +128,7 @@ export function GuidePanel() {
       </Section>
 
       <div className="text-gray-600 text-[10px] pt-2 border-t border-gray-800">
-        三国演弈 v1.0 | 30张地图 · 214将领 · 10势力
+        三国演弈 v2.0 | 30张地图 · 214将领 · 10势力 · 4层AI
       </div>
     </div>
   )
