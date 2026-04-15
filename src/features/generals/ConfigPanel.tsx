@@ -16,10 +16,6 @@ const FACTION_INFO: Record<string, { name: string; color: string }> = {
   jin: { name: '晋', color: '#8a8abf' },
 }
 
-const TROOP_NAMES: Record<string, string> = {
-  cavalry: '骑兵', infantry: '步兵', archer: '弓兵', shield: '盾兵', spearman: '枪兵',
-}
-
 const RARITY_BADGES: Record<string, { text: string; cls: string }> = {
   legend: { text: '传说', cls: 'bg-yellow-600/30 text-yellow-300 border-yellow-600/50' },
   elite: { text: '精英', cls: 'bg-blue-600/30 text-blue-300 border-blue-600/50' },
@@ -52,6 +48,8 @@ export function ConfigPanel() {
     deselectAllGenerals,
     toggleGodMode,
   } = useGameStore()
+  const boostedGeneralIds = useGameStore((s) => s.boostedGeneralIds)
+  const toggleBoost = useGameStore((s) => s.toggleBoost)
 
   const factions = [...new Set(allGenerals.map((g) => g.faction))] as const
   const hasGods = allGenerals.some((g) => g.tags?.includes('god'))
@@ -260,21 +258,34 @@ export function ConfigPanel() {
                 {factionGenerals.map((g) => {
                   const isSelected = selectedGeneralIds.includes(g.id)
                   const isGod = g.tags?.includes('god')
+                  const isBoosted = boostedGeneralIds.includes(g.id)
                   const rarity = isGod ? RARITY_BADGES.god : RARITY_BADGES[g.rarity]
                   return (
                     <div
                       key={g.id}
-                      onClick={() => toggleGeneral(g.id)}
-                      className={`flex items-center gap-1.5 p-1 rounded cursor-pointer text-[11px] transition-colors ${
+                      className={`flex items-center gap-1.5 p-1 rounded text-[11px] transition-colors ${
                         isSelected
-                          ? 'bg-gray-700/50 border border-gray-600/50'
-                          : 'bg-gray-800/30 border border-transparent hover:bg-gray-700/20 opacity-50'
+                          ? `bg-gray-700/50 border ${isBoosted ? 'border-amber-500/60' : 'border-gray-600/50'}`
+                          : 'bg-gray-800/30 border border-transparent opacity-50'
                       }`}
                     >
-                      <input type="checkbox" checked={isSelected} readOnly className="w-2.5 h-2.5 accent-blue-500 pointer-events-none" />
-                      <span className="font-medium text-gray-200 w-10">{g.name}</span>
+                      <input type="checkbox" checked={isSelected} readOnly
+                        onClick={() => toggleGeneral(g.id)}
+                        className="w-2.5 h-2.5 accent-blue-500 cursor-pointer shrink-0" />
+                      <span className="font-medium text-gray-200 w-10 cursor-pointer" onClick={() => toggleGeneral(g.id)}>{g.name}</span>
                       <span className={`px-1 py-0 text-[9px] rounded border ${rarity.cls}`}>{rarity.text}</span>
-                      <span className="text-gray-500 text-[10px]">{TROOP_NAMES[g.troopType]}</span>
+                      {/* Boost button */}
+                      <button
+                        onClick={(e) => { e.stopPropagation(); toggleBoost(g.id) }}
+                        className={`text-[9px] px-1 py-0 rounded shrink-0 ${
+                          isBoosted
+                            ? 'bg-amber-600/40 text-amber-200 border border-amber-500/50'
+                            : 'text-gray-600 hover:text-amber-400 hover:bg-gray-700/50'
+                        }`}
+                        title={isBoosted ? '取消强化' : '强化 (HP×2.5 攻×2 防×1.8)'}
+                      >
+                        {isBoosted ? '★' : '☆'}
+                      </button>
                       <div className="ml-auto flex gap-0.5 text-[9px] text-gray-500">
                         <span>统{g.command}</span>
                         <span>谋{g.strategy}</span>

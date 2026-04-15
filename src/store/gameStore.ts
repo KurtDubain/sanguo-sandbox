@@ -62,6 +62,7 @@ interface GameStore {
   activeTab: 'config' | 'log' | 'result' | 'batch' | 'settings' | 'history' | 'guide'
   simulationSpeed: number
   selectedUnitId: string | null
+  boostedGeneralIds: string[]   // generals with stat boost
   killFeed: { tick: number; message: string; color: string }[]
 
   batchResult: BatchResult | null
@@ -80,6 +81,7 @@ interface GameStore {
   setActiveTab: (tab: 'config' | 'log' | 'result' | 'batch' | 'settings' | 'history' | 'guide') => void
   togglePanel: () => void
   selectUnit: (id: string | null) => void
+  toggleBoost: (id: string) => void
   updateSettings: (partial: Partial<GameSettings>) => void
   toggleGodMode: (enabled: boolean) => void
 
@@ -181,6 +183,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
   activeTab: 'config',
   simulationSpeed: 1,
   selectedUnitId: null,
+  boostedGeneralIds: [],
   killFeed: [],
 
   batchResult: null,
@@ -207,6 +210,11 @@ export const useGameStore = create<GameStore>((set, get) => ({
   setActiveTab: (tab) => set({ activeTab: tab }),
   togglePanel: () => set((s) => ({ isPanelOpen: !s.isPanelOpen })),
   selectUnit: (id) => set({ selectedUnitId: id }),
+  toggleBoost: (id) => set((s) => ({
+    boostedGeneralIds: s.boostedGeneralIds.includes(id)
+      ? s.boostedGeneralIds.filter((gid) => gid !== id)
+      : [...s.boostedGeneralIds, id],
+  })),
   updateSettings: (partial) => set((s) => ({ settings: { ...s.settings, ...partial } })),
   toggleGodMode: (enabled) => {
     if (enabled) {
@@ -231,7 +239,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
     if (generals.length < 2) return
 
     vfxManager.clear()
-    const engine = new BattleEngine(generals, battleMode, seed, mapTemplate, get().settings, get().formation)
+    const engine = new BattleEngine(generals, battleMode, seed, mapTemplate, get().settings, get().formation, get().boostedGeneralIds)
     set({
       engine,
       battleState: engine.getState(),

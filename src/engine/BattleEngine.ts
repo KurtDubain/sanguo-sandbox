@@ -40,7 +40,7 @@ export class BattleEngine {
   private mapTemplate: MapTemplate
   private settings: GameSettings
 
-  constructor(generals: General[], mode: BattleMode, seed: number, mapTemplate: MapTemplate = 'random', settings?: GameSettings, formation: FormationType = 'none') {
+  constructor(generals: General[], mode: BattleMode, seed: number, mapTemplate: MapTemplate = 'random', settings?: GameSettings, formation: FormationType = 'none', boostedIds: string[] = []) {
     this.generals = generals
     this.mapTemplate = mapTemplate
     this.settings = settings ?? {
@@ -90,6 +90,22 @@ export class BattleEngine {
         if (b.moraleMult) {
           unit.morale = Math.min(100, Math.round(unit.morale * b.moraleMult))
           unit.maxMorale = Math.min(100, Math.round(unit.maxMorale * b.moraleMult))
+        }
+      }
+    }
+
+    // Apply individual boosts (mini-god mode per general)
+    if (boostedIds.length > 0) {
+      const boostSet = new Set(boostedIds)
+      for (const unit of units) {
+        if (boostSet.has(unit.id)) {
+          unit.maxHp = Math.round(unit.maxHp * 2.5)
+          unit.hp = unit.maxHp
+          unit.atk = Math.round(unit.atk * 2)
+          unit.def = Math.round(unit.def * 1.8)
+          unit.speed = Math.round(unit.speed * 1.3)
+          unit.morale = 100
+          unit.maxMorale = 100
         }
       }
     }
