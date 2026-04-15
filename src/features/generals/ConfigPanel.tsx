@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { useGameStore } from '../../store/gameStore'
 import { GOD_GENERALS } from '../../config/generals'
 import { HISTORICAL_BATTLES } from '../../config/campaigns'
@@ -26,7 +27,6 @@ const RARITY_BADGES: Record<string, { text: string; cls: string }> = {
   god: { text: '神', cls: 'bg-red-600/30 text-red-300 border-red-500/60 animate-pulse' },
 }
 
-// Quick presets for faction combinations
 const PRESETS: { label: string; factions: string[] }[] = [
   { label: '全部', factions: ['wei', 'shu', 'wu', 'qun', 'dong', 'yuan', 'xiliang', 'jingzhou', 'yizhou', 'jin'] },
   { label: '魏蜀吴', factions: ['wei', 'shu', 'wu'] },
@@ -57,48 +57,68 @@ export function ConfigPanel() {
   const hasGods = allGenerals.some((g) => g.tags?.includes('god'))
   const godIds = GOD_GENERALS.map((g) => g.id)
 
-  // God vs normals preset
+  // Track which factions are expanded (default: only factions with selected generals)
+  const [expandedFactions, setExpandedFactions] = useState<Set<string>>(() => {
+    const initial = new Set<string>()
+    for (const g of allGenerals) {
+      if (selectedGeneralIds.includes(g.id)) initial.add(g.faction)
+    }
+    // If too many, just expand first 4
+    if (initial.size > 4) {
+      const arr = [...initial]
+      initial.clear()
+      arr.slice(0, 4).forEach((f) => initial.add(f))
+    }
+    return initial
+  })
+
+  const toggleExpand = (faction: string) => {
+    setExpandedFactions((prev) => {
+      const next = new Set(prev)
+      if (next.has(faction)) next.delete(faction)
+      else next.add(faction)
+      return next
+    })
+  }
+
+  const expandAll = () => setExpandedFactions(new Set(factions))
+  const collapseAll = () => setExpandedFactions(new Set())
+
+  // Invert selection
+  const invertSelection = () => {
+    const allIds = allGenerals.map((g) => g.id)
+    const newIds = allIds.filter((id) => !selectedGeneralIds.includes(id))
+    useGameStore.setState({ selectedGeneralIds: newIds })
+  }
+
   const applyGodVsNormals = () => {
     if (!hasGods) toggleGodMode(true)
-    // Select all gods + all normals
     setTimeout(() => {
-      const store = useGameStore.getState()
-      useGameStore.setState({
-        selectedGeneralIds: store.allGenerals.map((g) => g.id),
-      })
+      useGameStore.setState({ selectedGeneralIds: useGameStore.getState().allGenerals.map((g) => g.id) })
     }, 0)
   }
 
   const applyGodsOnly = () => {
     if (!hasGods) toggleGodMode(true)
-    setTimeout(() => {
-      useGameStore.setState({ selectedGeneralIds: [...godIds] })
-    }, 0)
+    setTimeout(() => { useGameStore.setState({ selectedGeneralIds: [...godIds] }) }, 0)
   }
 
-  // Toggle entire faction
-  const toggleFaction = (faction: string) => {
+  const toggleFaction = (faction: string, e: React.MouseEvent) => {
+    e.stopPropagation() // don't toggle expand
     const factionIds = allGenerals.filter((g) => g.faction === faction).map((g) => g.id)
     const allSelected = factionIds.every((id) => selectedGeneralIds.includes(id))
-
     if (allSelected) {
-      // Deselect all from this faction
-      const newIds = selectedGeneralIds.filter((id) => !factionIds.includes(id))
-      useGameStore.setState({ selectedGeneralIds: newIds })
+      useGameStore.setState({ selectedGeneralIds: selectedGeneralIds.filter((id) => !factionIds.includes(id)) })
     } else {
-      // Select all from this faction
-      const newIds = [...new Set([...selectedGeneralIds, ...factionIds])]
-      useGameStore.setState({ selectedGeneralIds: newIds })
+      useGameStore.setState({ selectedGeneralIds: [...new Set([...selectedGeneralIds, ...factionIds])] })
     }
   }
 
-  // Apply preset
   const applyPreset = (factionList: string[]) => {
     const ids = allGenerals.filter((g) => factionList.includes(g.faction)).map((g) => g.id)
     useGameStore.setState({ selectedGeneralIds: ids })
   }
 
-  // Count selected factions
   const activeFactions = factions.filter((f) =>
     allGenerals.some((g) => g.faction === f && selectedGeneralIds.includes(g.id))
   )
@@ -110,9 +130,11 @@ export function ConfigPanel() {
         <h3 className="text-sm font-semibold text-gray-200">将领配置</h3>
         <div className="flex gap-1">
           <button onClick={selectAllGenerals}
-            className="text-xs px-1.5 py-0.5 bg-gray-700 hover:bg-gray-600 rounded text-gray-300">全选</button>
+            className="text-[10px] px-1.5 py-0.5 bg-gray-700 hover:bg-gray-600 rounded text-gray-300">全选</button>
+          <button onClick={invertSelection}
+            className="text-[10px] px-1.5 py-0.5 bg-gray-700 hover:bg-gray-600 rounded text-gray-300">反选</button>
           <button onClick={deselectAllGenerals}
-            className="text-xs px-1.5 py-0.5 bg-gray-700 hover:bg-gray-600 rounded text-gray-300">清空</button>
+            className="text-[10px] px-1.5 py-0.5 bg-gray-700 hover:bg-gray-600 rounded text-gray-300">清空</button>
         </div>
       </div>
 
@@ -148,7 +170,6 @@ export function ConfigPanel() {
             <button
               key={battle.id}
               onClick={() => {
-                // Select the specific generals from this battle
                 const ids = battle.factions.flatMap((f) => f.generalIds)
                 useGameStore.setState({
                   selectedGeneralIds: ids,
@@ -169,70 +190,73 @@ export function ConfigPanel() {
       <div className="p-1.5 rounded border border-amber-800/30 bg-amber-900/10">
         <div className="flex items-center gap-2 mb-1">
           <label className="flex items-center gap-1.5 cursor-pointer">
-            <input
-              type="checkbox"
-              checked={hasGods}
-              onChange={(e) => toggleGodMode(e.target.checked)}
-              className="w-3 h-3 accent-amber-500"
-            />
+            <input type="checkbox" checked={hasGods} onChange={(e) => toggleGodMode(e.target.checked)}
+              className="w-3 h-3 accent-amber-500" />
             <span className="text-[11px] text-amber-300 font-medium">神将模式</span>
           </label>
           {hasGods && (
             <div className="flex gap-1 ml-auto">
               <button onClick={applyGodsOnly}
                 className="text-[9px] px-1 py-0.5 bg-amber-800/30 border border-amber-700/40 rounded text-amber-300 hover:bg-amber-700/40">
-                神将乱斗
-              </button>
+                神将乱斗</button>
               <button onClick={applyGodVsNormals}
                 className="text-[9px] px-1 py-0.5 bg-amber-800/30 border border-amber-700/40 rounded text-amber-300 hover:bg-amber-700/40">
-                神vs凡
-              </button>
+                神vs凡</button>
             </div>
           )}
         </div>
-        {hasGods && (
-          <div className="text-[9px] text-gray-500">
-            8 名神将：血量/攻防/技能大幅强化，以一当十
-          </div>
-        )}
       </div>
 
-      <div className="text-xs text-gray-400">
-        已选 {selectedGeneralIds.length} 将 · {activeFactions.length} 阵营
+      {/* Stats + expand/collapse */}
+      <div className="flex items-center justify-between">
+        <div className="text-xs text-gray-400">
+          已选 {selectedGeneralIds.length} 将 · {activeFactions.length} 阵营
+        </div>
+        <div className="flex gap-1">
+          <button onClick={expandAll}
+            className="text-[9px] px-1 py-0.5 bg-gray-800 hover:bg-gray-700 rounded text-gray-500">全展</button>
+          <button onClick={collapseAll}
+            className="text-[9px] px-1 py-0.5 bg-gray-800 hover:bg-gray-700 rounded text-gray-500">全收</button>
+        </div>
       </div>
 
       {/* Faction groups */}
       {factions.map((faction) => {
-        const info = FACTION_INFO[faction]
+        const info = FACTION_INFO[faction] ?? { name: faction, color: '#888' }
         const factionGenerals = allGenerals.filter((g) => g.faction === faction)
-        const selectedCount = factionGenerals.filter((g) =>
-          selectedGeneralIds.includes(g.id)
-        ).length
+        const selectedCount = factionGenerals.filter((g) => selectedGeneralIds.includes(g.id)).length
         const allFactionSelected = selectedCount === factionGenerals.length
         const noneFactionSelected = selectedCount === 0
+        const isExpanded = expandedFactions.has(faction)
 
         return (
-          <div key={faction} className="space-y-0.5">
-            {/* Faction header — clickable to toggle entire faction */}
+          <div key={faction}>
+            {/* Faction header */}
             <div
-              onClick={() => toggleFaction(faction)}
-              className="flex items-center gap-2 text-xs font-medium cursor-pointer hover:opacity-80 py-0.5"
-              style={{ color: info.color }}
+              className="flex items-center gap-1.5 text-xs font-medium cursor-pointer hover:bg-gray-800/30 rounded py-1 px-1 -mx-1"
+              onClick={() => toggleExpand(faction)}
             >
+              {/* Expand arrow */}
+              <span className="text-gray-600 text-[10px] w-3 text-center select-none">
+                {isExpanded ? '▼' : '▶'}
+              </span>
+              {/* Faction checkbox */}
               <input
                 type="checkbox"
                 checked={allFactionSelected}
                 ref={(el) => { if (el) el.indeterminate = !allFactionSelected && !noneFactionSelected }}
                 readOnly
-                className="w-3 h-3 accent-blue-500 pointer-events-none"
+                onClick={(e) => toggleFaction(faction, e)}
+                className="w-3 h-3 accent-blue-500 cursor-pointer"
               />
-              <span className="w-2 h-2 rounded-full" style={{ backgroundColor: info.color }} />
-              {info.name} ({selectedCount}/{factionGenerals.length})
+              <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: info.color }} />
+              <span style={{ color: info.color }}>{info.name}</span>
+              <span className="text-gray-500 text-[10px]">({selectedCount}/{factionGenerals.length})</span>
             </div>
 
-            {/* General list — collapse if none selected */}
-            {selectedCount > 0 || !noneFactionSelected ? (
-              <div className="grid grid-cols-1 gap-0.5 ml-2">
+            {/* General list — expandable */}
+            {isExpanded && (
+              <div className="grid grid-cols-1 gap-0.5 ml-5 mt-0.5 mb-1">
                 {factionGenerals.map((g) => {
                   const isSelected = selectedGeneralIds.includes(g.id)
                   const isGod = g.tags?.includes('god')
@@ -259,10 +283,6 @@ export function ConfigPanel() {
                     </div>
                   )
                 })}
-              </div>
-            ) : (
-              <div className="text-[10px] text-gray-600 ml-5 py-0.5">
-                点击上方启用该阵营
               </div>
             )}
           </div>
