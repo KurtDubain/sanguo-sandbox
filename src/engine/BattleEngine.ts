@@ -178,7 +178,7 @@ export class BattleEngine {
     let cmdOrders = emptyOrders
     if (this.settings.commanderAI) {
       const { orders, events: cmdEvents } = commanderAI(
-        this.state.units, this.state.mode, this.state.tick, this.rng
+        this.state.units, this.state.mode, this.state.tick, this.rng, this.state.siege
       )
       cmdOrders = orders
       newEvents.push(...cmdEvents)

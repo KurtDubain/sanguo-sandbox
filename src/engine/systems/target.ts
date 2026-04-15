@@ -70,8 +70,8 @@ export function targetSystem(
     // 3. Fallback: score-based target selection
     const enemies = units.filter((u) => {
       if (u.id === unit.id || u.state === 'dead') return false
-      if (mode === 'faction_battle') return u.faction !== unit.faction
-      return true
+      if (mode === 'faction_battle' || mode === 'siege') return u.faction !== unit.faction
+      return true // free_for_all: everyone is enemy
     })
 
     if (enemies.length === 0) {

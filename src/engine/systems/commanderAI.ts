@@ -2,23 +2,24 @@
 // The general with the highest command stat in each faction acts as commander.
 // Every N ticks, the commander issues orders: focus target, retreat, regroup.
 
-import { BattleUnit, BattleMode, GameEvent } from '../../types'
+import { BattleUnit, BattleMode, GameEvent, SiegeState } from '../../types'
 import { distance } from '../utils/math'
 import { SeededRandom } from '../utils/random'
 
 export interface CommanderOrder {
-  focusTargetId: string | null   // whole faction attacks this target
-  retreatOrder: boolean           // faction pulls back to regroup
-  protectId: string | null        // protect this high-value unit
+  focusTargetId: string | null
+  retreatOrder: boolean
+  protectId: string | null
 }
 
-const COMMANDER_TICK_INTERVAL = 30 // re-evaluate every 30 ticks
+const COMMANDER_TICK_INTERVAL = 30
 
 export function commanderAI(
   units: BattleUnit[],
   mode: BattleMode,
   tick: number,
   rng: SeededRandom,
+  siege?: SiegeState | null,
 ): { orders: Map<string, CommanderOrder>; events: GameEvent[] } {
   const orders = new Map<string, CommanderOrder>()
   const events: GameEvent[] = []
@@ -53,8 +54,30 @@ export function commanderAI(
     // 1. Focus fire: pick the best target for the whole faction
     let focusTarget: BattleUnit | null = null
 
-    // High strategy commanders pick wounded or high-value targets
-    if (strategyLevel > 120) {
+    // Siege mode: special targeting
+    if (mode === 'siege' && siege) {
+      const cp = siege.controlPoint
+      if (faction === siege.defendingFaction) {
+        // Defenders: prioritize enemies closest to the control point
+        const scored = enemies.map((e) => ({
+          unit: e,
+          score: -distance(e.position, { x: cp.x, y: cp.y }) + (1 - e.hp / e.maxHp) * 100,
+        }))
+        scored.sort((a, b) => b.score - a.score)
+        focusTarget = scored[0]?.unit ?? null
+      } else {
+        // Attackers: prioritize defenders blocking the control point, or weakest
+        const scored = enemies.map((e) => {
+          const distToCp = distance(e.position, { x: cp.x, y: cp.y })
+          return {
+            unit: e,
+            score: (distToCp < cp.radius * 2 ? 200 : 0) + (1 - e.hp / e.maxHp) * 80,
+          }
+        })
+        scored.sort((a, b) => b.score - a.score)
+        focusTarget = scored[0]?.unit ?? null
+      }
+    } else if (strategyLevel > 120) {
       // Smart: find enemy with lowest HP% that multiple allies can reach
       const scored = enemies.map((e) => {
         const hpPct = e.hp / e.maxHp
@@ -81,10 +104,21 @@ export function commanderAI(
     }
     // Low strategy: no focus fire, everyone picks their own target
 
-    // 2. Check if faction should retreat to regroup
+    // 2. Check if faction should retreat
     const avgMorale = members.reduce((s, m) => s + m.morale, 0) / members.length
     const aliveRatio = members.length / units.filter((u) => u.faction === faction).length
-    const shouldRetreat = avgMorale < 35 && aliveRatio < 0.4 && commander.personality.caution > 60
+
+    // Siege mode: defenders NEVER retreat, attackers only retreat if very weak
+    let shouldRetreat = false
+    if (mode === 'siege' && siege) {
+      if (faction === siege.defendingFaction) {
+        shouldRetreat = false // defenders hold the line
+      } else {
+        shouldRetreat = avgMorale < 20 && aliveRatio < 0.2
+      }
+    } else {
+      shouldRetreat = avgMorale < 35 && aliveRatio < 0.4 && commander.personality.caution > 60
+    }
 
     // 3. Identify key unit to protect (highest achievement/charisma)
     const keyUnit = members.reduce((a, b) =>

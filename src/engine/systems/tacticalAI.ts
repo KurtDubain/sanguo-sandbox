@@ -231,7 +231,7 @@ function getFlankPosition(_attacker: BattleUnit, target: BattleUnit, rng: Seeded
 function getEnemies(unit: BattleUnit, units: BattleUnit[], mode: BattleMode): BattleUnit[] {
   return units.filter((u) => {
     if (u.id === unit.id || u.state === 'dead') return false
-    if (mode === 'faction_battle') return u.faction !== unit.faction
+    if (mode === 'faction_battle' || mode === 'siege') return u.faction !== unit.faction
     return true
   })
 }
