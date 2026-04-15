@@ -31,6 +31,7 @@ import {
 } from './systems/formations'
 import { terrainInteractionSystem, resetTerrainInteraction } from './systems/terrainInteraction'
 import { advancedAISystem } from './systems/advancedAI'
+import { commandStyleSystem, resetCommandStyles } from './systems/commandStyle'
 import { createSiegeState, siegeSystem, checkSiegeVictory } from './systems/siege'
 
 export class BattleEngine {
@@ -54,6 +55,7 @@ export class BattleEngine {
     resetPaths()
     resetCombatMechanics()
     resetTerrainInteraction()
+    resetCommandStyles()
 
     // Siege mode forces siege_castle map
     const effectiveTemplate = mode === 'siege' ? 'siege_castle' as const : mapTemplate
@@ -194,7 +196,11 @@ export class BattleEngine {
       newEvents.push(...duelEvents)
     }
 
-    // 4. Advanced AI (faction doctrines + situation awareness)
+    // 4. Command style system (faction-level style + commander death degradation)
+    const styleEvents = commandStyleSystem(this.state.units, this.state.mode, this.state.tick, this.rng)
+    newEvents.push(...styleEvents)
+
+    // 5. Advanced AI (faction doctrines + situation awareness)
     const advEvents = advancedAISystem(this.state.units, this.state.mode, this.state.map, this.state.tick, this.rng)
     newEvents.push(...advEvents)
 
