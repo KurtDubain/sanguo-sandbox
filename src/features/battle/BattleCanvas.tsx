@@ -370,16 +370,27 @@ export function BattleCanvas() {
 
     // === Draw units ===
     const unitCount = units.filter((u) => u.state !== 'dead').length
-    const R = unitCount > 60 ? 7 : unitCount > 40 ? 8 : 10
-    const glyph = unitCount > 60 ? 6 : 7
+    const baseR = unitCount > 60 ? 7 : unitCount > 40 ? 8 : 10
+    const glyphSize = unitCount > 60 ? 6 : 7
     const nameSize = unitCount > 60 ? 6 : 8
 
     for (const unit of units) {
       if (unit.state === 'dead') continue
-      const { x, y } = unit.position
+      let { x, y } = unit.position
       const fc = FACTION_COLORS[unit.faction] ?? unit.color
       const routed = unit.state === 'routed'
       const retreating = unit.state === 'retreating'
+      const hpPct = unit.hp / unit.maxHp
+
+      // Size varies by rarity
+      const isLegend = unit.achievement >= 85
+      const R = isLegend ? baseR + 2 : baseR
+
+      // Attack shake: small jitter when attacking
+      if (unit.state === 'attacking') {
+        x += Math.sin(state.tick * 1.5 + unit.position.x) * 1.2
+        y += Math.cos(state.tick * 1.5 + unit.position.y) * 1.2
+      }
 
       // Shadow
       ctx.beginPath()
@@ -387,13 +398,29 @@ export function BattleCanvas() {
       ctx.fillStyle = 'rgba(0,0,0,0.35)'
       ctx.fill()
 
-      // Body
+      // Legend glow
+      if (isLegend && !routed) {
+        ctx.beginPath()
+        ctx.arc(x, y, R + 3, 0, Math.PI * 2)
+        ctx.fillStyle = fc + '18'
+        ctx.fill()
+      }
+
+      // Body — low HP flash
       ctx.beginPath()
       ctx.arc(x, y, R, 0, Math.PI * 2)
-      ctx.fillStyle = routed ? '#444' : retreating ? fc + '88' : fc
+      let bodyColor = fc
+      if (routed) bodyColor = '#444'
+      else if (retreating) bodyColor = fc + '88'
+      else if (hpPct < 0.25) {
+        // Pulse between normal and red
+        const pulse = Math.sin(state.tick * 0.3) * 0.5 + 0.5
+        bodyColor = pulse > 0.5 ? fc : '#aa3333'
+      }
+      ctx.fillStyle = bodyColor
       ctx.fill()
 
-      // Facing direction indicator (small triangle)
+      // Facing indicator
       if (unit.state === 'attacking' || unit.state === 'moving') {
         const fx = x + Math.cos(unit.facing) * (R + 3)
         const fy = y + Math.sin(unit.facing) * (R + 3)
@@ -410,20 +437,19 @@ export function BattleCanvas() {
         ctx.strokeStyle = '#fff'
         ctx.lineWidth = 1.5
       } else {
-        ctx.strokeStyle = 'rgba(255,255,255,0.15)'
-        ctx.lineWidth = 0.6
+        ctx.strokeStyle = isLegend ? 'rgba(255,255,200,0.3)' : 'rgba(255,255,255,0.15)'
+        ctx.lineWidth = isLegend ? 1 : 0.6
       }
       ctx.stroke()
 
       // HP bar
-      const hpPct = unit.hp / unit.maxHp
       const bw = R * 2
       const bx = x - R
       const by = y - R - 4
 
       ctx.fillStyle = '#111'
       ctx.fillRect(bx, by, bw, 2.5)
-      ctx.fillStyle = hpPct > 0.5 ? '#3d9'  : hpPct > 0.25 ? '#da3' : '#d44'
+      ctx.fillStyle = hpPct > 0.5 ? '#3d9' : hpPct > 0.25 ? '#da3' : '#d44'
       ctx.fillRect(bx, by, bw * hpPct, 2.5)
 
       // Morale bar
@@ -434,7 +460,7 @@ export function BattleCanvas() {
       ctx.fillRect(bx, by + 3, bw * mpct, 1.5)
 
       // Troop glyph
-      ctx.font = `${glyph}px sans-serif`
+      ctx.font = `${glyphSize}px sans-serif`
       ctx.fillStyle = '#fff'
       ctx.textAlign = 'center'
       ctx.textBaseline = 'middle'
@@ -477,7 +503,7 @@ export function BattleCanvas() {
     for (const hf of vfxManager.hitFlashes) {
       const alpha = 1 - hf.age / hf.maxAge
       ctx.beginPath()
-      ctx.arc(hf.x, hf.y, R + 4, 0, Math.PI * 2)
+      ctx.arc(hf.x, hf.y, baseR + 4, 0, Math.PI * 2)
       ctx.fillStyle = `rgba(255,255,255,${alpha * 0.4})`
       ctx.fill()
     }
