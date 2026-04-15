@@ -3,12 +3,12 @@ import { useGameStore } from '../../store/gameStore'
 export function KillFeed() {
   const killFeed = useGameStore((s) => s.killFeed)
   const dramaticEvent = useGameStore((s) => s.dramaticEvent)
-  const autoSlowMo = useGameStore((s) => s.autoSlowMo)
+  const slowMoTicks = useGameStore((s) => s.slowMoTicks)
 
   return (
     <div className="absolute top-0 left-0 right-0 z-10 flex flex-col items-center pointer-events-none">
       {/* Dramatic event banner — big centered announcement */}
-      {dramaticEvent && autoSlowMo > 0 && (
+      {dramaticEvent && slowMoTicks > 0 && (
         <div
           className="mt-2 px-4 sm:px-6 py-1.5 sm:py-2 rounded-lg text-sm sm:text-base font-bold text-center backdrop-blur-md animate-pulse"
           style={{

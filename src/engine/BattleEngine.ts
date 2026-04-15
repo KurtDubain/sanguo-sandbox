@@ -48,7 +48,7 @@ export class BattleEngine {
     this.settings = settings ?? {
       weather: true, dangerZone: true, supplyPoints: true, duels: true,
       formations: true, warCry: true, surrender: true, commanderDeath: true,
-      tacticalAI: true, commanderAI: true, randomModifiers: false,
+      tacticalAI: true, commanderAI: true, autoSlowMo: true, randomModifiers: false,
     }
     this.rng = new SeededRandom(seed)
     resetAttackCooldowns()

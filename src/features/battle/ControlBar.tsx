@@ -33,12 +33,12 @@ export function ControlBar() {
   const tickIntervalRef = useRef<number | null>(null)
   const phase = battleState?.phase
 
-  const autoSlowMo = useGameStore((s) => s.autoSlowMo)
+  const slowMoTicks = useGameStore((s) => s.slowMoTicks)
 
   useEffect(() => {
     if (phase === 'running') {
       // Auto slow-mo reduces effective speed
-      const effectiveSpeed = autoSlowMo > 0 ? Math.min(simulationSpeed, 0.5) : simulationSpeed
+      const effectiveSpeed = slowMoTicks > 0 ? Math.min(simulationSpeed, 0.5) : simulationSpeed
       const interval = effectiveSpeed < 1
         ? Math.floor(100 / effectiveSpeed)
         : Math.max(10, Math.floor(100 / effectiveSpeed))
@@ -58,7 +58,7 @@ export function ControlBar() {
     return () => {
       if (tickIntervalRef.current) clearInterval(tickIntervalRef.current)
     }
-  }, [phase, simulationSpeed, tickBattle, autoSlowMo])
+  }, [phase, simulationSpeed, tickBattle, slowMoTicks])
 
   const handleStartOrResume = () => {
     if (!battleState) {

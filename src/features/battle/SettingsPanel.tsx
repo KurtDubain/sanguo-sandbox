@@ -27,6 +27,7 @@ const SETTING_GROUPS: {
       { key: 'warCry', label: '战吼鼓舞', desc: '德 80+ 将领定期鼓舞友军' },
       { key: 'surrender', label: '投降机制', desc: '孤立无援的低血低士气单位投降' },
       { key: 'commanderDeath', label: '斩将夺旗', desc: '击杀指挥官全阵营士气崩溃' },
+      { key: 'autoSlowMo', label: '关键慢动作', desc: '斩将/单挑/结局等时刻自动减速' },
     ],
   },
 ]

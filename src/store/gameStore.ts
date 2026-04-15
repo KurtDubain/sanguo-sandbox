@@ -27,6 +27,7 @@ export interface GameSettings {
   commanderDeath: boolean
   tacticalAI: boolean
   commanderAI: boolean
+  autoSlowMo: boolean
   randomModifiers: boolean
 }
 
@@ -41,6 +42,7 @@ export const DEFAULT_SETTINGS: GameSettings = {
   commanderDeath: true,
   tacticalAI: true,
   commanderAI: true,
+  autoSlowMo: true,
   randomModifiers: false,
 }
 
@@ -59,7 +61,7 @@ interface GameStore {
   recentEvents: GameEvent[]
   vfxTick: number
   dramaticEvent: { message: string; color: string; tick: number } | null
-  autoSlowMo: number // ticks remaining of auto slow-mo
+  slowMoTicks: number // ticks remaining of auto slow-mo
 
   isPanelOpen: boolean
   activeTab: 'config' | 'log' | 'result' | 'batch' | 'settings' | 'history' | 'guide'
@@ -181,7 +183,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
   recentEvents: [],
   vfxTick: 0,
   dramaticEvent: null,
-  autoSlowMo: 0,
+  slowMoTicks: 0,
 
   isPanelOpen: true,
   activeTab: 'config',
@@ -322,7 +324,12 @@ export const useGameStore = create<GameStore>((set, get) => ({
 
     // Dramatic events: detect key moments for slow-mo + announcement
     let dramatic: { message: string; color: string; tick: number } | null = null
-    let slowMoTicks = get().autoSlowMo > 0 ? get().autoSlowMo - 1 : 0
+    let slowMoTicks = get().slowMoTicks > 0 ? get().slowMoTicks - 1 : 0
+
+    // Only apply slow-mo if setting is enabled
+    if (!get().settings.autoSlowMo) {
+      slowMoTicks = 0
+    }
 
     for (const ev of newEvents) {
       // Commander killed
@@ -377,7 +384,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
       vfxTick: get().vfxTick + 1,
       killFeed: newFeed,
       dramaticEvent: dramatic ?? (get().dramaticEvent && state.tick - get().dramaticEvent!.tick < 60 ? get().dramaticEvent : null),
-      autoSlowMo: slowMoTicks,
+      slowMoTicks: slowMoTicks,
     })
 
     if (state.phase === 'finished' && state.result) {
