@@ -32,7 +32,8 @@ export default function App() {
     <div className="h-[100dvh] flex flex-col bg-[#0a0e17] text-[#d4c9a8] overflow-hidden">
       {/* Header — compact on mobile */}
       <header className="flex items-center justify-between px-2 sm:px-3 py-1 bg-gray-900/60 border-b border-gray-800 shrink-0">
-        <h1 className="text-xs sm:text-sm md:text-base font-bold tracking-wide text-amber-200/80 truncate">
+        <h1 className="text-xs sm:text-sm md:text-base font-bold tracking-wide text-amber-200/80 truncate flex items-center gap-1.5">
+          <img src="/favicon.svg" alt="" className="w-5 h-5 sm:w-6 sm:h-6" />
           三国演弈
         </h1>
         <div className="flex items-center gap-1.5 text-xs text-gray-500 shrink-0">

@@ -127,8 +127,10 @@ export function GuidePanel() {
         <Li>重开后生效</Li>
       </Section>
 
-      <div className="text-gray-600 text-[10px] pt-2 border-t border-gray-800">
+      <div className="text-gray-600 text-[10px] pt-2 border-t border-gray-800 text-center">
         三国演弈 v2.0 | 30张地图 · 214将领 · 10势力 · 4层AI
+        <br />
+        <span className="text-gray-700">By KurtDubain</span>
       </div>
     </div>
   )

@@ -1,0 +1,44 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- Background circle -->
+  <circle cx="256" cy="256" r="248" fill="#0a0e17" stroke="#d4a44e" stroke-width="8"/>
+
+  <!-- Inner ring -->
+  <circle cx="256" cy="256" r="220" fill="none" stroke="#d4a44e" stroke-width="2" opacity="0.3"/>
+
+  <!-- Three crossed swords (representing three kingdoms) -->
+  <!-- Sword 1 (Wei - Blue) - left -->
+  <g transform="rotate(-30, 256, 256)">
+    <rect x="248" y="80" width="16" height="200" rx="3" fill="#4a7cbf"/>
+    <rect x="230" y="160" width="52" height="8" rx="2" fill="#4a7cbf"/>
+    <polygon points="256,60 244,90 268,90" fill="#4a7cbf"/>
+  </g>
+
+  <!-- Sword 2 (Shu - Red) - center -->
+  <g transform="rotate(0, 256, 256)">
+    <rect x="248" y="80" width="16" height="200" rx="3" fill="#c44e4e"/>
+    <rect x="230" y="160" width="52" height="8" rx="2" fill="#c44e4e"/>
+    <polygon points="256,60 244,90 268,90" fill="#c44e4e"/>
+  </g>
+
+  <!-- Sword 3 (Wu - Green) - right -->
+  <g transform="rotate(30, 256, 256)">
+    <rect x="248" y="80" width="16" height="200" rx="3" fill="#4eb84e"/>
+    <rect x="230" y="160" width="52" height="8" rx="2" fill="#4eb84e"/>
+    <polygon points="256,60 244,90 268,90" fill="#4eb84e"/>
+  </g>
+
+  <!-- Shield at center -->
+  <path d="M256,220 L290,240 L290,290 L256,310 L222,290 L222,240 Z" fill="#1a1e2e" stroke="#d4a44e" stroke-width="3"/>
+  <text x="256" y="275" text-anchor="middle" font-family="serif" font-size="36" font-weight="bold" fill="#d4a44e">演</text>
+
+  <!-- Title arc - top -->
+  <text text-anchor="middle" font-family="serif" font-size="28" fill="#d4c9a8" opacity="0.9">
+    <textPath href="#topArc" startOffset="50%">三国演弈</textPath>
+  </text>
+  <defs>
+    <path id="topArc" d="M100,256 A156,156 0 0,1 412,256"/>
+  </defs>
+
+  <!-- Bottom credit -->
+  <text x="256" y="440" text-anchor="middle" font-family="sans-serif" font-size="14" fill="#666" opacity="0.6">By KurtDubain</text>
+</svg>

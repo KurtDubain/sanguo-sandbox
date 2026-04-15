@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <circle cx="16" cy="16" r="15" fill="#0a0e17" stroke="#d4a44e" stroke-width="1.5"/>
+  <!-- Three small swords -->
+  <g transform="rotate(-25, 16, 16)">
+    <rect x="15" y="5" width="2" height="14" rx="0.5" fill="#4a7cbf"/>
+  </g>
+  <g>
+    <rect x="15" y="5" width="2" height="14" rx="0.5" fill="#c44e4e"/>
+  </g>
+  <g transform="rotate(25, 16, 16)">
+    <rect x="15" y="5" width="2" height="14" rx="0.5" fill="#4eb84e"/>
+  </g>
+  <!-- Center dot -->
+  <circle cx="16" cy="18" r="3" fill="#1a1e2e" stroke="#d4a44e" stroke-width="0.8"/>
+  <text x="16" y="20" text-anchor="middle" font-family="serif" font-size="4" font-weight="bold" fill="#d4a44e">演</text>
+</svg>
