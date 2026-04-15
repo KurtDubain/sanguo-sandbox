@@ -289,6 +289,7 @@ export interface BattleState {
   supplyPoints: SupplyPoint[]
   dangerZone: DangerZone
   siege: SiegeState | null
+  alliances: string[][]   // e.g. [['shu','wu'],['wei']] — allied factions don't attack each other
   events: GameEvent[]
   result: BattleResult | null
 }

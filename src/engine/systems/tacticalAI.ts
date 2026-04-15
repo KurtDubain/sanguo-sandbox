@@ -1,6 +1,7 @@
 import { BattleUnit, BattleMode, Position } from '../../types'
 import { distance, angle } from '../utils/math'
 import { SeededRandom } from '../utils/random'
+import { isEnemy, areAllied } from '../utils/alliance'
 
 export interface TacticalOrder {
   targetId: string | null
@@ -12,14 +13,15 @@ export function tacticalAI(
   units: BattleUnit[],
   mode: BattleMode,
   rng: SeededRandom,
+  alliances: string[][] = [],
 ): Map<string, TacticalOrder> {
   const orders = new Map<string, TacticalOrder>()
 
   for (const unit of units) {
     if (unit.state === 'dead' || unit.state === 'routed' || unit.state === 'retreating') continue
 
-    const enemies = getEnemies(unit, units, mode)
-    const allies = getAllies(unit, units)
+    const enemies = getEnemies(unit, units, mode, alliances)
+    const allies = getAllies(unit, units, alliances)
     if (enemies.length === 0) continue
 
     switch (unit.troopType) {
@@ -294,16 +296,16 @@ function getFlankPosition(_attacker: BattleUnit, target: BattleUnit, rng: Seeded
   }
 }
 
-function getEnemies(unit: BattleUnit, units: BattleUnit[], mode: BattleMode): BattleUnit[] {
+function getEnemies(unit: BattleUnit, units: BattleUnit[], mode: BattleMode, alliances: string[][] = []): BattleUnit[] {
   return units.filter((u) => {
     if (u.id === unit.id || u.state === 'dead') return false
-    if (mode === 'faction_battle' || mode === 'siege') return u.faction !== unit.faction
-    return true
+    if (mode === 'free_for_all') return true
+    return isEnemy(unit.faction, u.faction, alliances)
   })
 }
 
-function getAllies(unit: BattleUnit, units: BattleUnit[]): BattleUnit[] {
+function getAllies(unit: BattleUnit, units: BattleUnit[], alliances: string[][] = []): BattleUnit[] {
   return units.filter(
-    (u) => u.id !== unit.id && u.faction === unit.faction && u.state !== 'dead'
+    (u) => u.id !== unit.id && u.state !== 'dead' && areAllied(unit.faction, u.faction, alliances)
   )
 }

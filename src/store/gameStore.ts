@@ -50,6 +50,7 @@ interface GameStore {
   battleMode: BattleMode
   mapTemplate: MapTemplate
   formation: FormationType
+  alliances: string[][]
   seed: number
   settings: GameSettings
 
@@ -171,6 +172,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
   battleMode: 'faction_battle',
   mapTemplate: 'random' as MapTemplate,
   formation: 'none' as FormationType,
+  alliances: [] as string[][],
   seed: Math.floor(Math.random() * 100000),
   settings: { ...DEFAULT_SETTINGS },
 
@@ -241,7 +243,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
     if (generals.length < 2) return
 
     vfxManager.clear()
-    const engine = new BattleEngine(generals, battleMode, seed, mapTemplate, get().settings, get().formation, get().boostedGeneralIds)
+    const engine = new BattleEngine(generals, battleMode, seed, mapTemplate, get().settings, get().formation, get().boostedGeneralIds, get().alliances ?? [])
     set({
       engine,
       battleState: engine.getState(),

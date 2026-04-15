@@ -1,10 +1,12 @@
 import { BattleUnit, BattleMode, BattleResult, GameEvent } from '../../types'
 import { FACTION_NAMES } from '../../config/factionDisplay'
+import { areAllied } from '../utils/alliance'
 
 export function victorySystem(
   units: BattleUnit[],
   mode: BattleMode,
   tick: number,
+  alliances: string[][] = [],
 ): { result: BattleResult | null; events: GameEvent[] } {
   const alive = units.filter((u) => u.state !== 'dead')
 
@@ -20,16 +22,18 @@ export function victorySystem(
   }
 
   if (mode === 'faction_battle') {
-    const aliveFactions = new Set(alive.map((u) => u.faction))
-    if (aliveFactions.size === 1) {
-      const winFaction = alive[0].faction
-      const factionName = FACTION_NAMES[winFaction] ?? winFaction
+    const aliveFactionList = [...new Set(alive.map((u) => u.faction))]
+    // All surviving factions must be in the same alliance group
+    const allAllied = aliveFactionList.length === 1 ||
+      aliveFactionList.every((f) => areAllied(f, aliveFactionList[0], alliances))
+    if (allAllied) {
+      const winNames = aliveFactionList.map((f) => FACTION_NAMES[f] ?? f).join('+')
       return {
-        result: buildResult(units, factionName, winFaction, mode, tick),
+        result: buildResult(units, winNames, aliveFactionList[0], mode, tick),
         events: [{
           tick,
           type: 'battle_end',
-          message: `${factionName}阵营获得胜利！`,
+          message: aliveFactionList.length > 1 ? `${winNames}联军获得胜利！` : `${winNames}阵营获得胜利！`,
         }],
       }
     }

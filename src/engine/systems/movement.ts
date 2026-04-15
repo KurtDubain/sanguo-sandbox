@@ -7,6 +7,7 @@ import { SeededRandom } from '../utils/random'
 import { getWeatherModifiers } from './weather'
 import { TacticalOrder } from './tacticalAI'
 import { findPath, isPathClear } from '../utils/pathfinding'
+import { isEnemy } from '../utils/alliance'
 
 // ======== Path Cache ========
 // Each unit stores: computed waypoints, the goal position, and tick of computation
@@ -39,6 +40,7 @@ export function movementSystem(
   weather: WeatherState,
   tacticalOrders?: Map<string, TacticalOrder>,
   mode: BattleMode = 'faction_battle',
+  alliances: string[][] = [],
 ): void {
   const wm = getWeatherModifiers(weather)
 
@@ -68,14 +70,14 @@ export function movementSystem(
 
     if (unit.state === 'routed') {
       moveSpeed *= BALANCE.ROUT_SPEED_MULT
-      const ne = findNearestEnemy(unit, units, mode)
+      const ne = findNearestEnemy(unit, units, mode, alliances)
       if (ne) {
         const away = angle(ne.position, unit.position) + rng.float(-1.0, 1.0)
         goalPos = { x: unit.position.x + Math.cos(away) * 150, y: unit.position.y + Math.sin(away) * 150 }
       }
     } else if (unit.state === 'retreating') {
       moveSpeed *= BALANCE.RETREAT_SPEED_MULT
-      const ne = findNearestEnemy(unit, units, mode)
+      const ne = findNearestEnemy(unit, units, mode, alliances)
       if (ne) {
         const away = angle(ne.position, unit.position) + rng.float(-0.3, 0.3)
         goalPos = { x: unit.position.x + Math.cos(away) * 150, y: unit.position.y + Math.sin(away) * 150 }
@@ -117,7 +119,7 @@ export function movementSystem(
 
     // No target → search
     if (!goalPos && unit.state !== 'attacking' && unit.state !== 'routed' && unit.state !== 'retreating') {
-      const ne = findNearestEnemy(unit, units, mode)
+      const ne = findNearestEnemy(unit, units, mode, alliances)
       if (ne) {
         unit.state = 'moving'
         moveSpeed *= BALANCE.SEARCH_SPEED_MULT
@@ -386,14 +388,15 @@ function spatialCollision(units: BattleUnit[], map: BattleMap) {
   }
 }
 
-function findNearestEnemy(unit: BattleUnit, units: BattleUnit[], mode: BattleMode = 'faction_battle'): BattleUnit | null {
+function findNearestEnemy(unit: BattleUnit, units: BattleUnit[], mode: BattleMode = 'faction_battle', alliances: string[][] = []): BattleUnit | null {
   let nearest: BattleUnit | null = null
   let minDist = Infinity
   for (const other of units) {
     if (other.id === unit.id || other.state === 'dead') continue
-    // In free-for-all, everyone is an enemy; otherwise only other factions
-    if (mode === 'faction_battle' || mode === 'siege') {
-      if (other.faction === unit.faction) continue
+    if (mode === 'free_for_all') {
+      // everyone is enemy
+    } else {
+      if (!isEnemy(unit.faction, other.faction, alliances)) continue
     }
     const d = distance(unit.position, other.position)
     if (d < minDist) { minDist = d; nearest = other }

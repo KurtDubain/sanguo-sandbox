@@ -5,8 +5,9 @@ import { SeededRandom } from '../utils/random'
 import { TacticalOrder } from './tacticalAI'
 import { CommanderOrder, applyCommanderOrders } from './commanderAI'
 import { hasLineOfSight } from '../utils/pathfinding'
+import { isEnemy } from '../utils/alliance'
 
-// Target selection — now integrates tactical AI and commander orders
+// Target selection — integrates tactical AI, commander orders, and alliances
 export function targetSystem(
   units: BattleUnit[],
   mode: BattleMode,
@@ -14,6 +15,7 @@ export function targetSystem(
   tacticalOrders: Map<string, TacticalOrder>,
   commanderOrders: Map<string, CommanderOrder>,
   map?: BattleMap,
+  alliances: string[][] = [],
 ): void {
   for (const unit of units) {
     if (unit.state === 'dead' || unit.state === 'routed') {
@@ -70,8 +72,9 @@ export function targetSystem(
     // 3. Fallback: score-based target selection
     const enemies = units.filter((u) => {
       if (u.id === unit.id || u.state === 'dead') return false
-      if (mode === 'faction_battle' || mode === 'siege') return u.faction !== unit.faction
-      return true // free_for_all: everyone is enemy
+      if (mode === 'free_for_all') return true
+      // faction_battle / siege: check alliances
+      return isEnemy(unit.faction, u.faction, alliances)
     })
 
     if (enemies.length === 0) {

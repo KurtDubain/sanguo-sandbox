@@ -9,6 +9,7 @@ export interface HistoricalBattle {
   description: string
   year: string
   factions: { faction: string; generalIds: string[] }[]
+  alliances?: string[][]  // e.g. [['shu','wu'],['wei']] — allied factions
   mapTemplate: MapTemplate
   mode: BattleMode
   specialRules?: {
@@ -36,6 +37,7 @@ export const HISTORICAL_BATTLES: HistoricalBattle[] = [
     name: '赤壁之战',
     description: '孙刘联军火攻曹操，奠定三分天下',
     year: '208年',
+    alliances: [['wu', 'shu'], ['wei']],
     factions: [
       { faction: 'wei', generalIds: ['caocao', 'simayi', 'zhangliao', 'xuhuang', 'caoren', 'dianwei', 'xuchu', 'caohong', 'yujin', 'pangde'] },
       { faction: 'wu', generalIds: ['zhouyu', 'sunquan', 'lusu', 'huanggai', 'ganning', 'taishici', 'chengpu', 'zhoutai', 'lingtong', 'handang'] },
@@ -62,6 +64,7 @@ export const HISTORICAL_BATTLES: HistoricalBattle[] = [
     name: '虎牢关之战',
     description: '三英战吕布，十八路诸侯讨董',
     year: '190年',
+    alliances: [['shu', 'wei', 'wu'], ['qun']],
     factions: [
       { faction: 'qun', generalIds: ['lvbu', 'dongzhuo', 'huaxiong', 'gaoshun', 'zhangxiu'] },
       { faction: 'shu', generalIds: ['liubei', 'guanyu', 'zhangfei'] },
@@ -90,6 +93,7 @@ export const HISTORICAL_BATTLES: HistoricalBattle[] = [
     name: '董卓进京',
     description: '董卓挟天子令诸侯，十八路诸侯起兵讨伐',
     year: '190年',
+    alliances: [['wei', 'shu', 'wu'], ['dong']],
     factions: [
       { faction: 'dong', generalIds: ['d_dongzhuo', 'd_lvbu', 'd_huaxiong', 'd_gaoshun', 'd_chenggong', 'd_lijue2', 'd_libu', 'd_guosi', 'd_niufu', 'd_zhangji'] },
       { faction: 'wei', generalIds: ['caocao', 'xiahoudun', 'xiahouyuan', 'caoren', 'caohong', 'dianwei'] },
@@ -171,6 +175,86 @@ export const HISTORICAL_BATTLES: HistoricalBattle[] = [
     mapTemplate: 'chibi',
     mode: 'faction_battle',
     specialRules: { weather: 'wind' },
+  },
+  // ---- 新增联盟战役 ----
+  {
+    id: 'guanduAlliance',
+    name: '官渡决战',
+    description: '曹操联合刘备对抗袁绍大军',
+    year: '200年',
+    alliances: [['wei', 'shu'], ['yuan']],
+    factions: [
+      { faction: 'wei', generalIds: ['caocao', 'guojia', 'xunyu', 'xuhuang', 'zhangliao', 'caoren', 'yujin', 'dianwei', 'xuchu'] },
+      { faction: 'shu', generalIds: ['liubei', 'guanyu', 'zhangfei'] },
+      { faction: 'yuan', generalIds: ['y_yuanshao', 'y_yanliang', 'y_wenchou', 'y_tianfeng', 'y_jushou', 'y_zhanghe2', 'y_gaolan', 'y_shenpei', 'y_chunyuqiong', 'y_xupei', 'y_yuantan', 'y_yuanshang'] },
+    ],
+    mapTemplate: 'plains',
+    mode: 'faction_battle',
+  },
+  {
+    id: 'hanzhong',
+    name: '汉中之战',
+    description: '刘备与曹操争夺汉中，黄忠斩夏侯渊',
+    year: '219年',
+    factions: [
+      { faction: 'shu', generalIds: ['liubei', 'zhugeliang', 'zhaoyun', 'zhangfei', 'huangzhong', 'weiyan', 'machao', 'fazheng'] },
+      { faction: 'wei', generalIds: ['caocao', 'xiahouyuan', 'xuhuang', 'zhanghe', 'caohong', 'xuchu', 'yujin'] },
+    ],
+    mapTemplate: 'valley',
+    mode: 'faction_battle',
+  },
+  {
+    id: 'fancheng',
+    name: '樊城之战',
+    description: '关羽水淹七军，威震华夏，后遭吴魏夹击',
+    year: '219年',
+    alliances: [['wei', 'wu'], ['shu']],
+    factions: [
+      { faction: 'shu', generalIds: ['guanyu', 'guanping', 'guanxing', 'liaohua'] },
+      { faction: 'wei', generalIds: ['caoren', 'xuhuang', 'yujin', 'pangde', 'xuchu'] },
+      { faction: 'wu', generalIds: ['lvmeng', 'luxun', 'lingtong', 'dingfeng'] },
+    ],
+    mapTemplate: 'river_delta',
+    mode: 'faction_battle',
+  },
+  {
+    id: 'sanchakou',
+    name: '三方混战',
+    description: '魏蜀吴三方势均力敌，鹿死谁手',
+    year: '220年',
+    factions: [
+      { faction: 'wei', generalIds: ['caocao', 'simayi', 'zhangliao', 'xiahoudun', 'dianwei', 'xuchu', 'guojia', 'caoren'] },
+      { faction: 'shu', generalIds: ['liubei', 'zhugeliang', 'guanyu', 'zhangfei', 'zhaoyun', 'machao', 'huangzhong', 'weiyan'] },
+      { faction: 'wu', generalIds: ['sunquan', 'zhouyu', 'luxun', 'sunce', 'ganning', 'taishici', 'zhoutai', 'huanggai'] },
+    ],
+    mapTemplate: 'three_kingdoms',
+    mode: 'faction_battle',
+  },
+  {
+    id: 'wuhu_vs_world',
+    name: '五虎上将',
+    description: '蜀汉五虎将对抗群雄',
+    year: '221年',
+    factions: [
+      { faction: 'shu', generalIds: ['guanyu', 'zhangfei', 'zhaoyun', 'machao', 'huangzhong'] },
+      { faction: 'wei', generalIds: ['zhangliao', 'xiahoudun', 'xuhuang', 'dianwei', 'xuchu', 'zhanghe', 'caoren', 'pangde'] },
+    ],
+    mapTemplate: 'arena',
+    mode: 'faction_battle',
+  },
+  {
+    id: 'xiliang_rebellion',
+    name: '西凉叛乱',
+    description: '马腾韩遂联合群雄起兵反曹',
+    year: '211年',
+    alliances: [['xiliang', 'qun'], ['wei']],
+    factions: [
+      { faction: 'xiliang', generalIds: ['xl_machao2', 'xl_mateng', 'xl_hansui', 'xl_pangde2', 'xl_madai2', 'xl_yanxing', 'xl_jiaxu'] },
+      { faction: 'qun', generalIds: ['lvbu', 'gongsunzan', 'zhangxiu', 'mateng'] },
+      { faction: 'wei', generalIds: ['caocao', 'simayi', 'xuchu', 'dianwei', 'caoren', 'yujin', 'zhangliao', 'xiahouyuan', 'xuhuang', 'jiaxu'] },
+    ],
+    mapTemplate: 'mountain_pass',
+    mode: 'faction_battle',
   },
 ]
 

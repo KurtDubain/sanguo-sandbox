@@ -42,7 +42,7 @@ export class BattleEngine {
   private mapTemplate: MapTemplate
   private settings: GameSettings
 
-  constructor(generals: General[], mode: BattleMode, seed: number, mapTemplate: MapTemplate = 'random', settings?: GameSettings, formation: FormationType = 'none', boostedIds: string[] = []) {
+  constructor(generals: General[], mode: BattleMode, seed: number, mapTemplate: MapTemplate = 'random', settings?: GameSettings, formation: FormationType = 'none', boostedIds: string[] = [], alliances: string[][] = []) {
     this.generals = generals
     this.mapTemplate = mapTemplate
     this.settings = settings ?? {
@@ -127,6 +127,7 @@ export class BattleEngine {
       supplyPoints: createSupplyPoints(map.width, map.height, this.rng),
       dangerZone: createDangerZone(map.width, map.height),
       siege: siegeState,
+      alliances,
       events: [
         {
           tick: 0, type: 'battle_start',
@@ -218,14 +219,14 @@ export class BattleEngine {
     // 5. Tactical AI
     let tactOrders = emptyOrders
     if (this.settings.tacticalAI) {
-      tactOrders = tacticalAI(this.state.units, this.state.mode, this.rng)
+      tactOrders = tacticalAI(this.state.units, this.state.mode, this.rng, this.state.alliances)
     }
 
     // 6. Target selection
-    targetSystem(this.state.units, this.state.mode, this.rng, tactOrders, cmdOrders, this.state.map)
+    targetSystem(this.state.units, this.state.mode, this.rng, tactOrders, cmdOrders, this.state.map, this.state.alliances)
 
     // 7. Movement
-    movementSystem(this.state.units, this.state.map, this.rng, this.state.weather, tactOrders, this.state.mode)
+    movementSystem(this.state.units, this.state.map, this.rng, this.state.weather, tactOrders, this.state.mode, this.state.alliances)
 
     // 8. Attack
     const attackEvents = attackSystem(this.state.units, this.state.tick, this.rng, this.state.weather, this.state.map)
@@ -326,7 +327,7 @@ export class BattleEngine {
     // 14. Normal victory (skip if siege handled it)
     if (!this.state.result) {
       const { result, events: victoryEvents } = victorySystem(
-        this.state.units, this.state.mode, this.state.tick,
+        this.state.units, this.state.mode, this.state.tick, this.state.alliances,
       )
       newEvents.push(...victoryEvents)
       if (result) {

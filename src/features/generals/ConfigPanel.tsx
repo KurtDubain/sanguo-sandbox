@@ -173,6 +173,7 @@ export function ConfigPanel() {
                   selectedGeneralIds: ids,
                   mapTemplate: battle.mapTemplate,
                   battleMode: battle.mode,
+                  alliances: battle.alliances ?? [],
                 })
               }}
               className="text-[10px] px-1.5 py-0.5 rounded border bg-gray-800 border-gray-700 text-gray-400 hover:bg-gray-700 hover:text-gray-200"
