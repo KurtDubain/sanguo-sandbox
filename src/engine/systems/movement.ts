@@ -117,17 +117,25 @@ export function movementSystem(
       }
     }
 
-    // No target → search
+    // No target → search or follow facing (siege gate direction)
     if (!goalPos && unit.state !== 'attacking' && unit.state !== 'routed' && unit.state !== 'retreating') {
-      const ne = findNearestEnemy(unit, units, mode, alliances)
-      if (ne) {
-        unit.state = 'moving'
-        moveSpeed *= BALANCE.SEARCH_SPEED_MULT
-        goalPos = { ...ne.position }
-        goalIsTarget = true
-        unit.facing = angle(unit.position, ne.position)
+      if (unit.state === 'moving' && !unit.targetId) {
+        // Siege mode: unit was directed toward a gate, use facing direction
+        goalPos = {
+          x: unit.position.x + Math.cos(unit.facing) * 100,
+          y: unit.position.y + Math.sin(unit.facing) * 100,
+        }
       } else {
-        unit.state = 'idle'
+        const ne = findNearestEnemy(unit, units, mode, alliances)
+        if (ne) {
+          unit.state = 'moving'
+          moveSpeed *= BALANCE.SEARCH_SPEED_MULT
+          goalPos = { ...ne.position }
+          goalIsTarget = true
+          unit.facing = angle(unit.position, ne.position)
+        } else {
+          unit.state = 'idle'
+        }
       }
     }
 

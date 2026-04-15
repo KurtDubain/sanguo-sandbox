@@ -15,7 +15,6 @@ export function createSiegeState(
   const wallHalfW = mapWidth * 0.18
   const wallHalfH = mapHeight * 0.2
 
-  // 4 towers at castle corners
   const towers: Tower[] = [
     makeTower('tower_nw', cx - wallHalfW, cy - wallHalfH, defendingFaction),
     makeTower('tower_ne', cx + wallHalfW, cy - wallHalfH, defendingFaction),
@@ -164,7 +163,58 @@ export function siegeSystem(
     }
   }
 
+  // === Guide attackers toward gates ===
+  const wallHalfW2 = cp.x * 0.36
+  const wallHalfH2 = cp.y * 0.4
+
+  // Gate positions
+  const gates = [
+    { x: cp.x, y: cp.y - wallHalfH2 },
+    { x: cp.x, y: cp.y + wallHalfH2 },
+    { x: cp.x - wallHalfW2, y: cp.y },
+    { x: cp.x + wallHalfW2, y: cp.y },
+  ]
+
+  for (const unit of units) {
+    if (unit.state === 'dead' || unit.state === 'routed' || unit.state === 'retreating') continue
+    if (unit.faction === siege.defendingFaction) continue
+
+    // Check if unit is inside the castle
+    const inside = Math.abs(unit.position.x - cp.x) < wallHalfW2 &&
+                   Math.abs(unit.position.y - cp.y) < wallHalfH2
+    if (inside) continue // already inside, normal combat
+
+    // Outside castle: force move toward nearest gate
+    const nearestGate = gates.reduce((a, b) =>
+      distance(unit.position, a) < distance(unit.position, b) ? a : b
+    )
+    const gateDist = distance(unit.position, nearestGate)
+
+    if (gateDist > 20) {
+      // Override target: clear enemy target, move toward gate
+      unit.targetId = null
+      unit.state = 'moving'
+      unit.facing = Math.atan2(nearestGate.y - unit.position.y, nearestGate.x - unit.position.x)
+    }
+  }
+
   return events
+}
+
+// Get nearest gate for a siege attacker (for external systems)
+export function getNearestGate(siege: SiegeState, pos: { x: number; y: number }): { x: number; y: number } {
+  const cp = siege.controlPoint
+  const wallHalfW = cp.x * 0.36
+  const wallHalfH = cp.y * 0.4
+  const gatePositions = [
+    { x: cp.x, y: cp.y - wallHalfH },
+    { x: cp.x, y: cp.y + wallHalfH },
+    { x: cp.x - wallHalfW, y: cp.y },
+    { x: cp.x + wallHalfW, y: cp.y },
+  ]
+  return gatePositions.reduce((a, b) =>
+    distance(pos, a) < distance(pos, b) ? a : b
+  )
 }
 
 // Siege victory check
