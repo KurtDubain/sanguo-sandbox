@@ -31,7 +31,6 @@ import {
 } from './systems/formations'
 import { terrainInteractionSystem, resetTerrainInteraction } from './systems/terrainInteraction'
 import { advancedAISystem } from './systems/advancedAI'
-import { rollModifiers, applyModifiers } from './systems/modifiers'
 import { createSiegeState, siegeSystem, checkSiegeVictory } from './systems/siege'
 
 export class BattleEngine {
@@ -112,12 +111,7 @@ export class BattleEngine {
       }
     }
 
-    // Apply random modifiers if enabled
-    const modifierEvents: import('../types').GameEvent[] = []
-    if (this.settings.randomModifiers) {
-      const mods = rollModifiers(this.rng, 2)
-      modifierEvents.push(...applyModifiers(mods, units, this.rng))
-    }
+    // (Random modifiers disabled)
 
     this.state = {
       tick: 0,
@@ -136,7 +130,6 @@ export class BattleEngine {
           tick: 0, type: 'battle_start',
           message: `战斗开始！${generals.length} 名将领参战。模式：${mode === 'faction_battle' ? '阵营对抗' : mode === 'siege' ? '攻城' : '混战'}`,
         },
-        ...modifierEvents,
       ],
       result: null,
     }

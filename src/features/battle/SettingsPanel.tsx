@@ -10,7 +10,6 @@ const SETTING_GROUPS: {
       { key: 'weather', label: '天气系统', desc: '雨/雾/风动态切换，影响战斗属性' },
       { key: 'dangerZone', label: '毒圈缩圈', desc: '800 tick 后安全区缩小，逼迫决战' },
       { key: 'supplyPoints', label: '补给点', desc: '地图上回血回士气的补给区域' },
-      { key: 'randomModifiers', label: '随机增益', desc: '每局随机2个全局效果(粮草/兵器/兵种加成等)' },
     ],
   },
   {
