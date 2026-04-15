@@ -31,6 +31,7 @@ import {
 } from './systems/formations'
 import { terrainInteractionSystem, resetTerrainInteraction } from './systems/terrainInteraction'
 import { advancedAISystem } from './systems/advancedAI'
+import { rollModifiers, applyModifiers } from './systems/modifiers'
 import { createSiegeState, siegeSystem, checkSiegeVictory } from './systems/siege'
 
 export class BattleEngine {
@@ -47,7 +48,7 @@ export class BattleEngine {
     this.settings = settings ?? {
       weather: true, dangerZone: true, supplyPoints: true, duels: true,
       formations: true, warCry: true, surrender: true, commanderDeath: true,
-      tacticalAI: true, commanderAI: true,
+      tacticalAI: true, commanderAI: true, randomModifiers: false,
     }
     this.rng = new SeededRandom(seed)
     resetAttackCooldowns()
@@ -111,6 +112,13 @@ export class BattleEngine {
       }
     }
 
+    // Apply random modifiers if enabled
+    const modifierEvents: import('../types').GameEvent[] = []
+    if (this.settings.randomModifiers) {
+      const mods = rollModifiers(this.rng, 2)
+      modifierEvents.push(...applyModifiers(mods, units, this.rng))
+    }
+
     this.state = {
       tick: 0,
       phase: 'setup',
@@ -123,11 +131,13 @@ export class BattleEngine {
       supplyPoints: createSupplyPoints(map.width, map.height, this.rng),
       dangerZone: createDangerZone(map.width, map.height),
       siege: siegeState,
-      events: [{
-        tick: 0,
-        type: 'battle_start',
-        message: `战斗开始！${generals.length} 名将领参战。模式：${mode === 'faction_battle' ? '阵营对抗' : '混战'}`,
-      }],
+      events: [
+        {
+          tick: 0, type: 'battle_start',
+          message: `战斗开始！${generals.length} 名将领参战。模式：${mode === 'faction_battle' ? '阵营对抗' : mode === 'siege' ? '攻城' : '混战'}`,
+        },
+        ...modifierEvents,
+      ],
       result: null,
     }
   }

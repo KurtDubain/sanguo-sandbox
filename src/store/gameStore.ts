@@ -27,6 +27,7 @@ export interface GameSettings {
   commanderDeath: boolean
   tacticalAI: boolean
   commanderAI: boolean
+  randomModifiers: boolean
 }
 
 export const DEFAULT_SETTINGS: GameSettings = {
@@ -40,6 +41,7 @@ export const DEFAULT_SETTINGS: GameSettings = {
   commanderDeath: true,
   tacticalAI: true,
   commanderAI: true,
+  randomModifiers: false,
 }
 
 interface GameStore {
