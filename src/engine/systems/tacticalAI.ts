@@ -1,17 +1,13 @@
-// Tactical AI: per-troop-type behavior logic
-// This runs BEFORE the generic target system to override behavior
-
 import { BattleUnit, BattleMode, Position } from '../../types'
 import { distance, angle } from '../utils/math'
 import { SeededRandom } from '../utils/random'
 
 export interface TacticalOrder {
   targetId: string | null
-  moveTarget: Position | null  // override movement destination
+  moveTarget: Position | null
   behavior: 'attack' | 'kite' | 'flank' | 'protect' | 'hold'
 }
 
-// Returns tactical orders for each unit based on troop type + personality
 export function tacticalAI(
   units: BattleUnit[],
   mode: BattleMode,
@@ -48,11 +44,11 @@ export function tacticalAI(
   return orders
 }
 
-// === Archer: kite, keep distance, retreat if approached ===
+// === Archer: stay behind allies, kite aggressively, retreat early ===
 function archerTactic(
   unit: BattleUnit,
   enemies: BattleUnit[],
-  _allies: BattleUnit[],
+  allies: BattleUnit[],
   _rng: SeededRandom,
 ): TacticalOrder {
   const nearest = enemies.reduce((a, b) =>
@@ -60,32 +56,56 @@ function archerTactic(
   )
   const dist = distance(unit.position, nearest.position)
 
-  // If enemy is too close, retreat backward
-  if (dist < unit.range * 0.5) {
-    const awayAngle = angle(nearest.position, unit.position)
-    const retreatDist = unit.range * 0.8
-    return {
-      targetId: nearest.id,
-      moveTarget: {
-        x: unit.position.x + Math.cos(awayAngle) * retreatDist,
-        y: unit.position.y + Math.sin(awayAngle) * retreatDist,
-      },
-      behavior: 'kite',
+  // Check if any melee enemy is approaching (cavalry/infantry heading toward us)
+  const approachingMelee = enemies.filter(
+    (e) => e.range <= 60 && distance(unit.position, e.position) < unit.range * 0.7
+  )
+
+  // If melee enemy is approaching, retreat toward nearest ally cluster
+  if (approachingMelee.length > 0) {
+    // Find the center of friendly melee units (they can protect us)
+    const meleeAllies = allies.filter((a) => a.range <= 60 && a.state !== 'routed')
+    let retreatTarget: Position
+
+    if (meleeAllies.length > 0) {
+      // Retreat toward our own melee line
+      const cx = meleeAllies.reduce((s, a) => s + a.position.x, 0) / meleeAllies.length
+      const cy = meleeAllies.reduce((s, a) => s + a.position.y, 0) / meleeAllies.length
+      // Position behind the melee line relative to enemy
+      const awayAngle = angle(nearest.position, { x: cx, y: cy })
+      retreatTarget = {
+        x: cx + Math.cos(awayAngle) * 60,
+        y: cy + Math.sin(awayAngle) * 60,
+      }
+    } else {
+      // No allies, just run away
+      const awayAngle = angle(nearest.position, unit.position)
+      retreatTarget = {
+        x: unit.position.x + Math.cos(awayAngle) * unit.range * 0.6,
+        y: unit.position.y + Math.sin(awayAngle) * unit.range * 0.6,
+      }
     }
+
+    // Still shoot at the nearest enemy while retreating
+    const inRange = enemies.filter((e) => distance(unit.position, e.position) <= unit.range)
+    const shootTarget = inRange.length > 0
+      ? inRange.reduce((a, b) => a.hp / a.maxHp < b.hp / b.maxHp ? a : b)
+      : nearest
+
+    return { targetId: shootTarget.id, moveTarget: retreatTarget, behavior: 'kite' }
   }
 
-  // If in good range, stay and shoot the weakest visible enemy
+  // Safe — shoot the weakest in range
   if (dist <= unit.range * 1.1) {
-    // Pick weakest in range
     const inRange = enemies.filter((e) => distance(unit.position, e.position) <= unit.range)
     if (inRange.length > 0) {
-      const weakest = inRange.reduce((a, b) => (a.hp / a.maxHp < b.hp / b.maxHp ? a : b))
+      const weakest = inRange.reduce((a, b) => a.hp / a.maxHp < b.hp / b.maxHp ? a : b)
       return { targetId: weakest.id, moveTarget: null, behavior: 'attack' }
     }
   }
 
-  // Move toward nearest but don't get too close
-  const idealDist = unit.range * 0.8
+  // Move closer but maintain distance
+  const idealDist = unit.range * 0.75
   if (dist > idealDist) {
     const toAngle = angle(unit.position, nearest.position)
     return {
@@ -101,14 +121,14 @@ function archerTactic(
   return { targetId: nearest.id, moveTarget: null, behavior: 'attack' }
 }
 
-// === Cavalry: flank, charge from behind, hit and run ===
+// === Cavalry: don't suicide into enemy blob, wait for opening ===
 function cavalryTactic(
   unit: BattleUnit,
   enemies: BattleUnit[],
   _allies: BattleUnit[],
   rng: SeededRandom,
 ): TacticalOrder {
-  // If morale is low, don't charge deep — retreat to allies
+  // Low morale: don't charge deep
   if (unit.morale < 40) {
     const nearest = enemies.reduce((a, b) =>
       distance(unit.position, a.position) < distance(unit.position, b.position) ? a : b
@@ -116,23 +136,44 @@ function cavalryTactic(
     return { targetId: nearest.id, moveTarget: null, behavior: 'attack' }
   }
 
-  // Priority 1: hunt enemy archers (cavalry crush archers) — but only nearby ones
+  // Count how many enemies are near (don't charge into a blob of 5+)
+  const nearbyEnemyCount = enemies.filter(
+    (e) => distance(unit.position, e.position) < 100
+  ).length
+
+  // If already surrounded by 4+, stop charging and fight defensively
+  if (nearbyEnemyCount >= 4) {
+    const weakest = enemies
+      .filter((e) => distance(unit.position, e.position) < 80)
+      .reduce((a, b) => a.hp < b.hp ? a : b, enemies[0])
+    return { targetId: weakest.id, moveTarget: null, behavior: 'attack' }
+  }
+
+  // Priority: hunt enemy archers, but only if they're isolated (not behind a wall of melee)
   const enemyArchers = enemies.filter((e) =>
-    e.troopType === 'archer' && distance(unit.position, e.position) < 300
+    e.troopType === 'archer' && distance(unit.position, e.position) < 250
   )
   if (enemyArchers.length > 0 && unit.strategy > 50) {
+    // Check if the archer is protected by melee units
     const target = enemyArchers.reduce((a, b) =>
       distance(unit.position, a.position) < distance(unit.position, b.position) ? a : b
     )
-    const flankPos = getFlankPosition(unit, target, rng)
-    return { targetId: target.id, moveTarget: flankPos, behavior: 'flank' }
+    const guardsNearArcher = enemies.filter(
+      (e) => e.range <= 60 && distance(e.position, target.position) < 60
+    ).length
+
+    // Only go for archer if they have < 2 guards nearby
+    if (guardsNearArcher < 2) {
+      const flankPos = getFlankPosition(unit, target, rng)
+      return { targetId: target.id, moveTarget: flankPos, behavior: 'flank' }
+    }
   }
 
-  // Priority 2: flank engaged enemies (attack from behind) — don't go too far
+  // Priority: flank enemies already engaged with our allies
   const engaged = enemies.filter((e) =>
-    e.state === 'attacking' && e.targetId !== unit.id && distance(unit.position, e.position) < 200
+    e.state === 'attacking' && e.targetId !== unit.id && distance(unit.position, e.position) < 180
   )
-  if (engaged.length > 0 && rng.chance(0.5 + unit.strategy * 0.003)) {
+  if (engaged.length > 0 && rng.chance(0.4 + unit.strategy * 0.003)) {
     const target = engaged.reduce((a, b) =>
       distance(unit.position, a.position) < distance(unit.position, b.position) ? a : b
     )
@@ -147,29 +188,28 @@ function cavalryTactic(
   return { targetId: nearest.id, moveTarget: null, behavior: 'attack' }
 }
 
-// === Shield: protect nearby archers and hold the line ===
+// === Shield: actively seek archers to protect, position further ahead ===
 function shieldTactic(
   unit: BattleUnit,
   enemies: BattleUnit[],
   allies: BattleUnit[],
   _rng: SeededRandom,
 ): TacticalOrder {
-  // Find friendly archers that need protection
+  // Find friendly archers in wider range (200px instead of 150)
   const nearbyArchers = allies.filter(
-    (a) => a.troopType === 'archer' && distance(unit.position, a.position) < 150
+    (a) => a.troopType === 'archer' && distance(unit.position, a.position) < 200
   )
 
   if (nearbyArchers.length > 0) {
     const archer = nearbyArchers[0]
-    // Position between archer and nearest enemy
     const nearestEnemy = enemies.reduce((a, b) =>
       distance(archer.position, a.position) < distance(archer.position, b.position) ? a : b
     )
+    // Position 50px ahead of archer toward enemy (was 30, too close)
     const guardAngle = angle(archer.position, nearestEnemy.position)
-    const guardDist = 30
     const guardPos = {
-      x: archer.position.x + Math.cos(guardAngle) * guardDist,
-      y: archer.position.y + Math.sin(guardAngle) * guardDist,
+      x: archer.position.x + Math.cos(guardAngle) * 50,
+      y: archer.position.y + Math.sin(guardAngle) * 50,
     }
     return {
       targetId: nearestEnemy.id,
@@ -178,22 +218,40 @@ function shieldTactic(
     }
   }
 
-  // No archer to protect → hold position and fight nearest
+  // No archer — find any ranged ally to protect
+  const rangedAllies = allies.filter((a) => a.range > 60 && distance(unit.position, a.position) < 200)
+  if (rangedAllies.length > 0) {
+    const ranged = rangedAllies[0]
+    const nearestEnemy = enemies.reduce((a, b) =>
+      distance(ranged.position, a.position) < distance(ranged.position, b.position) ? a : b
+    )
+    const guardAngle = angle(ranged.position, nearestEnemy.position)
+    return {
+      targetId: nearestEnemy.id,
+      moveTarget: {
+        x: ranged.position.x + Math.cos(guardAngle) * 45,
+        y: ranged.position.y + Math.sin(guardAngle) * 45,
+      },
+      behavior: 'protect',
+    }
+  }
+
+  // No one to protect — hold and fight
   const nearest = enemies.reduce((a, b) =>
     distance(unit.position, a.position) < distance(unit.position, b.position) ? a : b
   )
   return { targetId: nearest.id, moveTarget: null, behavior: 'hold' }
 }
 
-// === Spearman: anti-cavalry, form wall ===
+// === Spearman: intercept cavalry, form front line ===
 function spearmanTactic(
   unit: BattleUnit,
   enemies: BattleUnit[],
   _allies: BattleUnit[],
   _rng: SeededRandom,
 ): TacticalOrder {
-  // Priority: intercept enemy cavalry
-  const enemyCav = enemies.filter((e) => e.troopType === 'cavalry')
+  // Priority: intercept enemy cavalry heading toward our archers
+  const enemyCav = enemies.filter((e) => e.troopType === 'cavalry' && distance(unit.position, e.position) < 200)
   if (enemyCav.length > 0) {
     const target = enemyCav.reduce((a, b) =>
       distance(unit.position, a.position) < distance(unit.position, b.position) ? a : b
@@ -208,17 +266,16 @@ function spearmanTactic(
   return { targetId: nearest.id, moveTarget: null, behavior: 'hold' }
 }
 
-// === Infantry: balanced, follow commander orders or hold line ===
+// === Infantry: focus weak targets, form the main battle line ===
 function infantryTactic(
   unit: BattleUnit,
   enemies: BattleUnit[],
   _allies: BattleUnit[],
   _rng: SeededRandom,
 ): TacticalOrder {
-  // Basic: attack nearest, but prefer wounded targets
   const scored = enemies.map((e) => {
     let score = -distance(unit.position, e.position) * 0.5
-    score += (1 - e.hp / e.maxHp) * 100  // prefer wounded
+    score += (1 - e.hp / e.maxHp) * 100
     if (e.state === 'retreating' || e.state === 'routed') score += 80
     return { e, score }
   })
@@ -230,12 +287,10 @@ function infantryTactic(
 
 // === Helpers ===
 function getFlankPosition(_attacker: BattleUnit, target: BattleUnit, rng: SeededRandom): Position {
-  // Go behind the target based on their facing direction
   const behindAngle = target.facing + Math.PI + rng.float(-0.4, 0.4)
-  const flankDist = 40
   return {
-    x: target.position.x + Math.cos(behindAngle) * flankDist,
-    y: target.position.y + Math.sin(behindAngle) * flankDist,
+    x: target.position.x + Math.cos(behindAngle) * 40,
+    y: target.position.y + Math.sin(behindAngle) * 40,
   }
 }
 
