@@ -30,6 +30,7 @@ import {
   warCryCheck, surrenderCheck,
 } from './systems/formations'
 import { terrainInteractionSystem, resetTerrainInteraction } from './systems/terrainInteraction'
+import { advancedAISystem } from './systems/advancedAI'
 import { createSiegeState, siegeSystem, checkSiegeVictory } from './systems/siege'
 
 export class BattleEngine {
@@ -190,7 +191,11 @@ export class BattleEngine {
       newEvents.push(...duelEvents)
     }
 
-    // 4. Commander AI
+    // 4. Advanced AI (faction doctrines + situation awareness)
+    const advEvents = advancedAISystem(this.state.units, this.state.mode, this.state.map, this.state.tick, this.rng)
+    newEvents.push(...advEvents)
+
+    // 5. Commander AI
     const emptyOrders = new Map() as Map<string, any>
     let cmdOrders = emptyOrders
     if (this.settings.commanderAI) {
