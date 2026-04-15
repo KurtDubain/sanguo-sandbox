@@ -7,7 +7,7 @@ import { getWeatherModifiers } from './weather'
 import { hasLineOfSight } from '../utils/pathfinding'
 import {
   getChargeDamageBonus, consumeCharge, getAmbushBonus,
-  commanderDeathCheck, isInDuel,
+  commanderDeathCheck, isInDuel, activateChargeMoraleShield, hasChargeMoraleShield,
 } from './combatMechanics'
 
 const attackCooldowns = new Map<string, number>()
@@ -168,7 +168,10 @@ export function attackSystem(
     const chargeBonus = getChargeDamageBonus(unit.id)
     if (chargeBonus > 0 && unit.troopType === 'cavalry') {
       chargeMult = 1 + chargeBonus
-      consumeCharge(unit.id) // consume on first hit
+      consumeCharge(unit.id)
+      // Charge morale shield: cavalry gets temporary morale immunity after charging in
+      activateChargeMoraleShield(unit.id)
+      unit.morale = Math.min(unit.maxMorale, unit.morale + BALANCE.CHARGE_MORALE_BOOST)
     }
     atkPower *= chargeMult
 
@@ -251,10 +254,13 @@ export function attackSystem(
       }
     }
 
-    // Morale impact
-    let moralePenalty = finalDamage * BALANCE.MORALE_DECAY_ON_HIT * 0.1
-    if (isFlank) moralePenalty += BALANCE.FLANK_MORALE_PENALTY
-    target.morale -= moralePenalty
+    // Morale impact (discipline reduces morale damage taken, charge shield blocks it)
+    if (!hasChargeMoraleShield(target.id)) {
+      const disciplineArmor = 1 - target.personality.discipline * BALANCE.DISCIPLINE_MORALE_ARMOR
+      let moralePenalty = finalDamage * BALANCE.MORALE_DECAY_ON_HIT * 0.1 * Math.max(0.3, disciplineArmor)
+      if (isFlank) moralePenalty += BALANCE.FLANK_MORALE_PENALTY * Math.max(0.5, disciplineArmor)
+      target.morale -= moralePenalty
+    }
 
     // Build attack message
     const tags: string[] = []

@@ -3,7 +3,7 @@ import { BALANCE } from '../../config/balance'
 import { TERRAIN_MODIFIERS } from '../../config/balance'
 import { SeededRandom } from './random'
 
-export type MapTemplate = 'valley' | 'crossroads' | 'fortress' | 'plains' | 'river_delta' | 'mountain_pass' | 'siege_castle' | 'changban' | 'chibi' | 'hulao' | 'jieting' | 'twin_lakes' | 'canyon_bridge' | 'three_kingdoms' | 'swamp' | 'labyrinth' | 'islands' | 'ambush_valley' | 'volcano' | 'great_wall' | 'spiral' | 'oasis' | 'frozen_river' | 'arena' | 'bagua' | 'random'
+export type MapTemplate = 'valley' | 'crossroads' | 'fortress' | 'plains' | 'river_delta' | 'mountain_pass' | 'siege_castle' | 'changban' | 'chibi' | 'hulao' | 'jieting' | 'twin_lakes' | 'canyon_bridge' | 'three_kingdoms' | 'swamp' | 'labyrinth' | 'islands' | 'ambush_valley' | 'volcano' | 'great_wall' | 'spiral' | 'oasis' | 'frozen_river' | 'arena' | 'bagua' | 'wasteland' | 'waterfall' | 'starfort' | 'dungeon' | 'chessboard' | 'random'
 
 const MAP_TEMPLATE_NAMES: Record<MapTemplate, string> = {
   valley: '峡谷', crossroads: '十字路口', fortress: '中央要塞',
@@ -13,6 +13,7 @@ const MAP_TEMPLATE_NAMES: Record<MapTemplate, string> = {
   twin_lakes: '双湖', canyon_bridge: '栈道', three_kingdoms: '三分天下', swamp: '沼泽',
   labyrinth: '迷宫', islands: '群岛', ambush_valley: '伏兵谷', volcano: '火山口', great_wall: '长城',
   spiral: '螺旋', oasis: '绿洲', frozen_river: '冰河', arena: '斗兽场', bagua: '八卦阵',
+  wasteland: '荒原', waterfall: '瀑布峡', starfort: '棱堡', dungeon: '地牢', chessboard: '棋盘',
   random: '随机',
 }
 export { MAP_TEMPLATE_NAMES }
@@ -54,7 +55,7 @@ export function generateMap(rng: SeededRandom, template?: MapTemplate): BattleMa
 
   let tmpl = template ?? 'random'
   if (tmpl === 'random') {
-    tmpl = rng.pick(['valley', 'crossroads', 'fortress', 'plains', 'river_delta', 'mountain_pass', 'changban', 'chibi', 'hulao', 'jieting', 'twin_lakes', 'canyon_bridge', 'three_kingdoms', 'swamp', 'labyrinth', 'islands', 'ambush_valley', 'volcano', 'great_wall', 'spiral', 'oasis', 'frozen_river', 'arena', 'bagua'])
+    tmpl = rng.pick(['valley', 'crossroads', 'fortress', 'plains', 'river_delta', 'mountain_pass', 'changban', 'chibi', 'hulao', 'jieting', 'twin_lakes', 'canyon_bridge', 'three_kingdoms', 'swamp', 'labyrinth', 'islands', 'ambush_valley', 'volcano', 'great_wall', 'spiral', 'oasis', 'frozen_river', 'arena', 'bagua', 'wasteland', 'waterfall', 'starfort', 'dungeon', 'chessboard'])
   }
 
   switch (tmpl) {
@@ -83,6 +84,11 @@ export function generateMap(rng: SeededRandom, template?: MapTemplate): BattleMa
     case 'frozen_river': genFrozenRiver(terrain, cols, rows, rng, seed); break
     case 'arena': genArena(terrain, cols, rows, rng, seed); break
     case 'bagua': genBagua(terrain, cols, rows, rng, seed); break
+    case 'wasteland': genWasteland(terrain, cols, rows, rng, seed); break
+    case 'waterfall': genWaterfall(terrain, cols, rows, rng, seed); break
+    case 'starfort': genStarfort(terrain, cols, rows, rng, seed); break
+    case 'dungeon': genDungeon(terrain, cols, rows, rng, seed); break
+    case 'chessboard': genChessboard(terrain, cols, rows, rng, seed); break
   }
 
   // Noise-based forest scatter (only on plain cells)
@@ -1469,6 +1475,301 @@ function genBagua(t: TerrainType[][], cols: number, rows: number, rng: SeededRan
       if (t[y][x] === 'plain' && !isInSafeZone(x, y, cols, rows)) {
         const n = fbm(x, y, seed + 800)
         if (n > 0.6 && n < 0.68) t[y][x] = 'forest'
+      }
+    }
+  }
+}
+
+// ============ 荒原: sparse terrain, scattered rocks, dust storm feel ============
+function genWasteland(t: TerrainType[][], cols: number, rows: number, rng: SeededRandom, seed: number) {
+  // Sparse rocky outcrops using noise
+  for (let y = 0; y < rows; y++) {
+    for (let x = 0; x < cols; x++) {
+      if (isInSafeZone(x, y, cols, rows)) continue
+      const n = fbm(x, y, seed)
+      if (n > 0.73) t[y][x] = 'mountain'
+      else if (n > 0.67 && n < 0.7) t[y][x] = 'forest' // scrub bushes
+    }
+  }
+
+  // Dried riverbed (ford terrain — slow but passable)
+  let ry = rng.int(Math.floor(rows * 0.3), Math.floor(rows * 0.7))
+  for (let x = 0; x < cols; x++) {
+    if (!isInSafeZone(x, ry, cols, rows)) t[ry][x] = 'ford'
+    if (rng.chance(0.3)) ry += rng.int(-1, 1)
+    ry = Math.max(SAFE_CELLS + 2, Math.min(rows - SAFE_CELLS - 2, ry))
+  }
+
+  // A few large rock formations
+  for (let i = 0; i < rng.int(3, 6); i++) {
+    const cx = rng.int(SAFE_CELLS + 4, cols - SAFE_CELLS - 4)
+    const cy = rng.int(SAFE_CELLS + 4, rows - SAFE_CELLS - 4)
+    const r = rng.int(2, 4)
+    for (let dy = -r; dy <= r; dy++) {
+      for (let dx = -r; dx <= r; dx++) {
+        if (dx * dx + dy * dy > r * r) continue
+        const nx = cx + dx, ny = cy + dy
+        if (nx >= 0 && nx < cols && ny >= 0 && ny < rows && !isInSafeZone(nx, ny, cols, rows)) {
+          t[ny][nx] = rng.chance(0.7) ? 'mountain' : 'plain'
+        }
+      }
+    }
+  }
+}
+
+// ============ 瀑布峡: vertical river with waterfalls at cliff faces ============
+function genWaterfall(t: TerrainType[][], cols: number, rows: number, rng: SeededRandom, seed: number) {
+  const midX = Math.floor(cols / 2)
+
+  // Central river flowing top to bottom
+  let rx = midX
+  for (let y = 0; y < rows; y++) {
+    if (!isInSafeZone(rx, y, cols, rows)) t[y][rx] = 'river'
+    if (rx + 1 < cols && !isInSafeZone(rx + 1, y, cols, rows)) t[y][rx + 1] = 'river'
+    if (rng.chance(0.2)) rx += rng.int(-1, 1)
+    rx = Math.max(SAFE_CELLS + 3, Math.min(cols - SAFE_CELLS - 3, rx))
+  }
+
+  // Cliff faces along the river (mountain walls on both sides)
+  for (let y = 0; y < rows; y++) {
+    for (let x = 0; x < cols; x++) {
+      if (t[y][x] !== 'river') continue
+      for (const dx of [-2, -3, 2, 3]) {
+        const nx = x + dx
+        if (nx >= 0 && nx < cols && !isInSafeZone(nx, y, cols, rows) && t[y][nx] === 'plain') {
+          if (rng.chance(0.6)) t[y][nx] = 'mountain'
+        }
+      }
+    }
+  }
+
+  // Bridges at 3 points
+  const bridgeYs = [Math.floor(rows * 0.2), Math.floor(rows * 0.5), Math.floor(rows * 0.8)]
+  for (const by of bridgeYs) {
+    for (let x = 0; x < cols; x++) {
+      if (t[by]?.[x] === 'river') t[by][x] = 'bridge'
+    }
+    // Clear cliffs near bridges
+    for (let dx = -4; dx <= 4; dx++) {
+      for (let dy = -1; dy <= 1; dy++) {
+        const nx = midX + dx, ny = by + dy
+        if (nx >= 0 && nx < cols && ny >= 0 && ny < rows && t[ny][nx] === 'mountain') {
+          t[ny][nx] = 'plain'
+        }
+      }
+    }
+  }
+
+  // Forests on both sides
+  for (let y = 0; y < rows; y++) {
+    for (let x = 0; x < cols; x++) {
+      if (t[y][x] !== 'plain' || isInSafeZone(x, y, cols, rows)) continue
+      const n = fbm(x, y, seed)
+      if (n > 0.52 && n < 0.64) t[y][x] = 'forest'
+    }
+  }
+}
+
+// ============ 棱堡: star-shaped fortress with angular walls ============
+function genStarfort(t: TerrainType[][], cols: number, rows: number, rng: SeededRandom, _seed: number) {
+  const midX = Math.floor(cols / 2)
+  const midY = Math.floor(rows / 2)
+  const points = 5
+  const outerR = Math.min(cols, rows) * 0.3
+  const innerR = outerR * 0.55
+
+  // Draw star shape with walls
+  for (let a = 0; a < 360; a++) {
+    const angle = (a * Math.PI) / 180
+    // Alternate between outer and inner radius for star shape
+    const pointAngle = (Math.floor(a / (360 / points)) + 0.5) * (360 / points) * Math.PI / 180
+    const angleDiff = Math.abs(angle - pointAngle)
+    const normalDiff = angleDiff > Math.PI ? 2 * Math.PI - angleDiff : angleDiff
+    const starR = innerR + (outerR - innerR) * Math.max(0, 1 - normalDiff * points / Math.PI)
+
+    // Wall line at this radius
+    for (let dr = -1; dr <= 1; dr++) {
+      const r = starR + dr
+      const wx = Math.round(midX + Math.cos(angle) * r)
+      const wy = Math.round(midY + Math.sin(angle) * r)
+      if (wx >= 0 && wx < cols && wy >= 0 && wy < rows && !isInSafeZone(wx, wy, cols, rows)) {
+        t[wy][wx] = 'wall'
+      }
+    }
+  }
+
+  // 5 gates at each point of the star
+  for (let p = 0; p < points; p++) {
+    const angle = (2 * Math.PI * p) / points
+    for (let r = innerR - 2; r <= outerR + 3; r++) {
+      for (let w = -2; w <= 2; w++) {
+        const gx = Math.round(midX + Math.cos(angle) * r + Math.cos(angle + Math.PI / 2) * w)
+        const gy = Math.round(midY + Math.sin(angle) * r + Math.sin(angle + Math.PI / 2) * w)
+        if (gx >= 0 && gx < cols && gy >= 0 && gy < rows && t[gy][gx] === 'wall') {
+          t[gy][gx] = 'bridge'
+        }
+      }
+    }
+  }
+
+  // Moat around the star
+  if (rng.chance(0.6)) {
+    for (let a = 0; a < 360; a++) {
+      const angle = (a * Math.PI) / 180
+      const moatR = outerR + 4
+      const mx = Math.round(midX + Math.cos(angle) * moatR)
+      const my = Math.round(midY + Math.sin(angle) * moatR)
+      if (mx >= 0 && mx < cols && my >= 0 && my < rows && !isInSafeZone(mx, my, cols, rows) && t[my][mx] === 'plain') {
+        t[my][mx] = 'river'
+      }
+    }
+    // Bridges at gates over moat
+    for (let p = 0; p < points; p++) {
+      const angle = (2 * Math.PI * p) / points
+      const moatR = outerR + 4
+      for (let dr = -1; dr <= 2; dr++) {
+        const bx = Math.round(midX + Math.cos(angle) * (moatR + dr))
+        const by = Math.round(midY + Math.sin(angle) * (moatR + dr))
+        if (bx >= 0 && bx < cols && by >= 0 && by < rows && t[by][bx] === 'river') t[by][bx] = 'bridge'
+      }
+    }
+  }
+}
+
+// ============ 地牢: dense rooms connected by narrow corridors ============
+function genDungeon(t: TerrainType[][], cols: number, rows: number, rng: SeededRandom, _seed: number) {
+  // Fill with walls
+  for (let y = 0; y < rows; y++) {
+    for (let x = 0; x < cols; x++) {
+      if (!isInSafeZone(x, y, cols, rows)) t[y][x] = 'mountain'
+    }
+  }
+
+  // Place random rooms
+  const rooms: { x: number; y: number; w: number; h: number }[] = []
+  for (let attempt = 0; attempt < 40; attempt++) {
+    const w = rng.int(4, 8)
+    const h = rng.int(4, 7)
+    const x = rng.int(SAFE_CELLS + 1, cols - SAFE_CELLS - w - 1)
+    const y = rng.int(SAFE_CELLS + 1, rows - SAFE_CELLS - h - 1)
+
+    // Check no overlap with existing rooms
+    const overlap = rooms.some((r) =>
+      x < r.x + r.w + 2 && x + w + 2 > r.x && y < r.y + r.h + 2 && y + h + 2 > r.y
+    )
+    if (overlap) continue
+
+    rooms.push({ x, y, w, h })
+    // Carve room
+    for (let dy = 0; dy < h; dy++) {
+      for (let dx = 0; dx < w; dx++) {
+        t[y + dy][x + dx] = rng.chance(0.05) ? 'forest' : 'plain'
+      }
+    }
+  }
+
+  // Connect rooms with corridors (connect each room to the nearest)
+  for (let i = 0; i < rooms.length; i++) {
+    let bestJ = -1, bestDist = Infinity
+    for (let j = 0; j < rooms.length; j++) {
+      if (i === j) continue
+      const d = Math.abs(rooms[i].x - rooms[j].x) + Math.abs(rooms[i].y - rooms[j].y)
+      if (d < bestDist) { bestDist = d; bestJ = j }
+    }
+    if (bestJ < 0) continue
+
+    const a = rooms[i], b = rooms[bestJ]
+    const ax = a.x + Math.floor(a.w / 2), ay = a.y + Math.floor(a.h / 2)
+    const bx = b.x + Math.floor(b.w / 2), by = b.y + Math.floor(b.h / 2)
+
+    // L-shaped corridor
+    let cx = ax
+    while (cx !== bx) {
+      if (t[ay]?.[cx] === 'mountain') t[ay][cx] = 'plain'
+      if (ay + 1 < rows && t[ay + 1]?.[cx] === 'mountain') t[ay + 1][cx] = 'plain'
+      cx += cx < bx ? 1 : -1
+    }
+    let cy = ay
+    while (cy !== by) {
+      if (t[cy]?.[bx] === 'mountain') t[cy][bx] = 'plain'
+      if (bx + 1 < cols && t[cy]?.[bx + 1] === 'mountain') t[cy][bx + 1] = 'plain'
+      cy += cy < by ? 1 : -1
+    }
+  }
+
+  // Ensure corners connect to nearest room
+  const corners = [[SAFE_CELLS, SAFE_CELLS], [cols - SAFE_CELLS - 1, SAFE_CELLS],
+                   [SAFE_CELLS, rows - SAFE_CELLS - 1], [cols - SAFE_CELLS - 1, rows - SAFE_CELLS - 1]]
+  for (const [sx, sy] of corners) {
+    let best = rooms[0]
+    let bestD = Infinity
+    for (const r of rooms) {
+      const d = Math.abs(r.x - sx) + Math.abs(r.y - sy)
+      if (d < bestD) { bestD = d; best = r }
+    }
+    if (!best) continue
+    const bx = best.x + Math.floor(best.w / 2), by = best.y + Math.floor(best.h / 2)
+    let cx = sx, cy = sy
+    while (cx !== bx) { if (t[cy]?.[cx] === 'mountain') t[cy][cx] = 'plain'; cx += cx < bx ? 1 : -1 }
+    while (cy !== by) { if (t[cy]?.[bx] === 'mountain') t[cy][bx] = 'plain'; cy += cy < by ? 1 : -1 }
+  }
+}
+
+// ============ 棋盘: alternating blocks of terrain like a chess board ============
+function genChessboard(t: TerrainType[][], cols: number, rows: number, rng: SeededRandom, _seed: number) {
+  const blockSize = rng.int(5, 7)
+  const types: TerrainType[] = ['forest', 'mountain', 'plain', 'forest']
+
+  for (let by = 0; by < rows; by += blockSize) {
+    for (let bx = 0; bx < cols; bx += blockSize) {
+      const gridX = Math.floor(bx / blockSize)
+      const gridY = Math.floor(by / blockSize)
+      const isBlack = (gridX + gridY) % 2 === 0
+
+      // Black squares: forest or mountain, White squares: plain
+      const blockType = isBlack ? rng.pick(types) : 'plain'
+
+      for (let dy = 0; dy < blockSize && by + dy < rows; dy++) {
+        for (let dx = 0; dx < blockSize && bx + dx < cols; dx++) {
+          const x = bx + dx, y = by + dy
+          if (isInSafeZone(x, y, cols, rows)) continue
+          t[y][x] = blockType
+        }
+      }
+    }
+  }
+
+  // Paths between blocks (ensure connectivity)
+  for (let by = 0; by < rows; by += blockSize) {
+    for (let bx = 0; bx < cols; bx += blockSize) {
+      // Clear 2-wide paths at block edges
+      const edgeX = bx + blockSize - 1
+      const edgeY = by + blockSize - 1
+      if (edgeX < cols) {
+        for (let dy = 0; dy < 2 && by + blockSize / 2 + dy < rows; dy++) {
+          const y = by + Math.floor(blockSize / 2) + dy
+          if (y >= 0 && y < rows && !isInSafeZone(edgeX, y, cols, rows)) t[y][edgeX] = 'plain'
+          if (edgeX + 1 < cols && !isInSafeZone(edgeX + 1, y, cols, rows)) t[y][edgeX + 1] = 'plain'
+        }
+      }
+      if (edgeY < rows) {
+        for (let dx = 0; dx < 2 && bx + blockSize / 2 + dx < cols; dx++) {
+          const x = bx + Math.floor(blockSize / 2) + dx
+          if (x >= 0 && x < cols && !isInSafeZone(x, edgeY, cols, rows)) t[edgeY][x] = 'plain'
+          if (edgeY + 1 < rows && !isInSafeZone(x, edgeY + 1, cols, rows)) t[edgeY + 1][x] = 'plain'
+        }
+      }
+    }
+  }
+
+  // Add some water features in the center
+  if (rng.chance(0.5)) {
+    const midX = Math.floor(cols / 2), midY = Math.floor(rows / 2)
+    for (let dy = -2; dy <= 2; dy++) {
+      for (let dx = -2; dx <= 2; dx++) {
+        if (midX + dx >= 0 && midX + dx < cols && midY + dy >= 0 && midY + dy < rows) {
+          t[midY + dy][midX + dx] = dx * dx + dy * dy <= 2 ? 'river' : 'bridge'
+        }
       }
     }
   }

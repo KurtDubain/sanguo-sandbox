@@ -4,6 +4,7 @@ import { BattleUnit, GameEvent } from '../../types'
 import { distance } from '../utils/math'
 import { SeededRandom } from '../utils/random'
 import { FACTION_NAMES } from '../../config/factionDisplay'
+import { BALANCE } from '../../config/balance'
 
 // =================== Cavalry Charge Momentum ===================
 // Track how far cavalry units have been moving in a straight line before attacking.
@@ -15,6 +16,7 @@ const lastPositions = new Map<string, { x: number; y: number }>()
 export function resetCombatMechanics() {
   chargeDistances.clear()
   lastPositions.clear()
+  chargeMoraleShield.clear()
 }
 
 export function updateChargeDistance(units: BattleUnit[]) {
@@ -44,6 +46,24 @@ export function getChargeDamageBonus(unitId: string): number {
 
 export function consumeCharge(unitId: string) {
   chargeDistances.set(unitId, 0)
+}
+
+// Charge morale shield: cavalry get temporary morale immunity after a charge hit
+const chargeMoraleShield = new Map<string, number>() // unitId → ticks remaining
+
+export function activateChargeMoraleShield(unitId: string) {
+  chargeMoraleShield.set(unitId, BALANCE.CHARGE_MORALE_SHIELD_TICKS)
+}
+
+export function hasChargeMoraleShield(unitId: string): boolean {
+  return (chargeMoraleShield.get(unitId) ?? 0) > 0
+}
+
+export function tickChargeMoraleShields() {
+  for (const [id, ticks] of chargeMoraleShield) {
+    if (ticks <= 0) chargeMoraleShield.delete(id)
+    else chargeMoraleShield.set(id, ticks - 1)
+  }
 }
 
 // =================== Forest Ambush ===================
@@ -194,7 +214,10 @@ export function commanderDeathCheck(
     // All allies lose significant morale
     for (const ally of factionUnits) {
       if (ally.state === 'dead') continue
-      ally.morale -= 20
+      // Scale penalty by distance — closer allies feel it more, distant ones less
+      const dist = distance(ally.position, deadUnit.position)
+      const penalty = dist < 150 ? 15 : dist < 300 ? 10 : 6
+      ally.morale -= penalty
       if (ally.morale < 0) ally.morale = 0
     }
     events.push({

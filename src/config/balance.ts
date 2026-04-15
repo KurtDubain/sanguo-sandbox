@@ -134,22 +134,30 @@ export const BALANCE = {
   PURSUIT_MARTIAL_BONUS: 0.003,
 
   // Morale
-  MORALE_DECAY_ON_HIT: 0.35,          // reduced (was 0.5) — less morale lost per hit
-  MORALE_BOOST_ON_KILL: 10,           // buffed (was 8)
-  MORALE_REGEN_RATE: 0.3,             // 3x faster (was 0.1) — units can actually recover
-  MORALE_RETREAT_THRESHOLD: 25,       // lowered (was 30) — more fight before retreat
-  MORALE_ROUT_THRESHOLD: 8,           // lowered (was 10) — rout is harder to trigger
-  MORALE_NEARBY_DEATH_PENALTY: 4,     // reduced (was 5)
-  MORALE_CASCADE_RANGE: 80,           // tighter (was 100)
-  MORALE_CASCADE_CHANCE: 0.06,        // massively reduced (was 0.15) — no more instant army rout
-  MORALE_CHARISMA_AURA_RANGE: 140,    // wider (was 120)
+  MORALE_DECAY_ON_HIT: 0.3,             // damage×this×0.1 = morale lost per hit
+  MORALE_BOOST_ON_KILL: 12,             // morale gained on kill
+  MORALE_REGEN_RATE: 0.35,              // base regen per tick
+  MORALE_RETREAT_THRESHOLD: 22,         // below this → retreat
+  MORALE_ROUT_THRESHOLD: 6,             // below this → rout
+  MORALE_ROUT_RECOVERY: 38,             // morale needed to recover from rout (was 50 implicitly)
+  MORALE_NEARBY_DEATH_PENALTY: 3,       // per nearby death
+  MORALE_CASCADE_RANGE: 70,             // tighter cascade range
+  MORALE_CASCADE_CHANCE: 0.05,          // 5% base cascade chance
+  MORALE_CHARISMA_AURA_RANGE: 160,      // wider aura
+
+  // Discipline morale armor (NEW)
+  DISCIPLINE_MORALE_ARMOR: 0.004,       // discipline reduces incoming morale damage
 
   // Rally & Comeback
-  RALLY_RANGE: 150,                   // commander rally point radius
-  RALLY_MORALE_REGEN: 0.5,            // morale recovery per tick in rally zone
+  RALLY_RANGE: 180,                     // wider rally range
+  RALLY_MORALE_REGEN: 0.6,             // stronger rally regen
   SECOND_WIND_THRESHOLD: 0.25,        // HP% to trigger second wind
   SECOND_WIND_ATK_BONUS: 0.4,         // +40% ATK during second wind
   SECOND_WIND_DEF_BONUS: 0.25,        // +25% DEF during second wind
+
+  // Cavalry charge morale
+  CHARGE_MORALE_SHIELD_TICKS: 25,     // ticks of morale immunity after charge hit
+  CHARGE_MORALE_BOOST: 10,            // morale boost when charge connects
 
   // Movement
   BASE_SPEED: 2.5,               // slower, more cinematic

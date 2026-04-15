@@ -23,7 +23,7 @@ import { commanderAI } from './systems/commanderAI'
 import { createSupplyPoints, createDangerZone, supplySystem, dangerZoneSystem } from './systems/battlefield'
 import { resetPaths } from './systems/movement'
 import {
-  updateChargeDistance, duelSystem, resetCombatMechanics,
+  updateChargeDistance, duelSystem, resetCombatMechanics, tickChargeMoraleShields,
 } from './systems/combatMechanics'
 import {
   archerVolleyCheck, shieldWallCheck, spearmanBraceCheck,
@@ -160,8 +160,9 @@ export class BattleEngine {
       newEvents.push(...weatherEvents)
     }
 
-    // 1. Charge tracking
+    // 1. Charge tracking + morale shield tick
     updateChargeDistance(this.state.units)
+    tickChargeMoraleShields()
 
     // 2. Skill
     const skillEvents = skillSystem(this.state.units, this.state.tick, this.rng, this.state.map)

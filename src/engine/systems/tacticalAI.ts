@@ -108,20 +108,31 @@ function cavalryTactic(
   _allies: BattleUnit[],
   rng: SeededRandom,
 ): TacticalOrder {
-  // Priority 1: hunt enemy archers (cavalry crush archers)
-  const enemyArchers = enemies.filter((e) => e.troopType === 'archer')
+  // If morale is low, don't charge deep — retreat to allies
+  if (unit.morale < 40) {
+    const nearest = enemies.reduce((a, b) =>
+      distance(unit.position, a.position) < distance(unit.position, b.position) ? a : b
+    )
+    return { targetId: nearest.id, moveTarget: null, behavior: 'attack' }
+  }
+
+  // Priority 1: hunt enemy archers (cavalry crush archers) — but only nearby ones
+  const enemyArchers = enemies.filter((e) =>
+    e.troopType === 'archer' && distance(unit.position, e.position) < 300
+  )
   if (enemyArchers.length > 0 && unit.strategy > 50) {
     const target = enemyArchers.reduce((a, b) =>
       distance(unit.position, a.position) < distance(unit.position, b.position) ? a : b
     )
-    // Try to approach from behind
     const flankPos = getFlankPosition(unit, target, rng)
     return { targetId: target.id, moveTarget: flankPos, behavior: 'flank' }
   }
 
-  // Priority 2: flank engaged enemies (attack from behind)
-  const engaged = enemies.filter((e) => e.state === 'attacking' && e.targetId !== unit.id)
-  if (engaged.length > 0 && rng.chance(0.6 + unit.strategy * 0.003)) {
+  // Priority 2: flank engaged enemies (attack from behind) — don't go too far
+  const engaged = enemies.filter((e) =>
+    e.state === 'attacking' && e.targetId !== unit.id && distance(unit.position, e.position) < 200
+  )
+  if (engaged.length > 0 && rng.chance(0.5 + unit.strategy * 0.003)) {
     const target = engaged.reduce((a, b) =>
       distance(unit.position, a.position) < distance(unit.position, b.position) ? a : b
     )
@@ -129,7 +140,7 @@ function cavalryTactic(
     return { targetId: target.id, moveTarget: flankPos, behavior: 'flank' }
   }
 
-  // Default: charge the nearest
+  // Default: attack nearest
   const nearest = enemies.reduce((a, b) =>
     distance(unit.position, a.position) < distance(unit.position, b.position) ? a : b
   )
