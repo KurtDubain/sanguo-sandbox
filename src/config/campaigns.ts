@@ -256,6 +256,83 @@ export const HISTORICAL_BATTLES: HistoricalBattle[] = [
     mapTemplate: 'mountain_pass',
     mode: 'faction_battle',
   },
+  {
+    id: 'hefei',
+    name: '合肥之战',
+    description: '张辽八百破十万，威震逍遥津',
+    year: '215年',
+    factions: [
+      { faction: 'wei', generalIds: ['zhangliao', 'lidian', 'yuejin', 'xuchu', 'caoren'] },
+      { faction: 'wu', generalIds: ['sunquan', 'ganning', 'lingtong', 'zhoutai', 'lvmeng', 'chengpu', 'handang', 'taishici', 'dingfeng', 'xusheng'] },
+    ],
+    mapTemplate: 'fortress',
+    mode: 'faction_battle',
+  },
+  {
+    id: 'dingjun',
+    name: '定军山之战',
+    description: '黄忠刀劈夏侯渊，蜀军夺取汉中',
+    year: '219年',
+    factions: [
+      { faction: 'shu', generalIds: ['huangzhong', 'zhaoyun', 'fazheng', 'weiyan', 'wangping'] },
+      { faction: 'wei', generalIds: ['xiahouyuan', 'zhanghe', 'xuhuang', 'caohong', 'dengai'] },
+    ],
+    mapTemplate: 'jieting',
+    mode: 'faction_battle',
+  },
+  {
+    id: 'jiangdong',
+    name: '小霸王平江东',
+    description: '孙策横扫江东六郡，奠定吴国基业',
+    year: '195年',
+    factions: [
+      { faction: 'wu', generalIds: ['sunce', 'zhouyu', 'huanggai', 'chengpu', 'handang', 'ganning', 'taishici'] },
+      { faction: 'jingzhou', generalIds: ['jz_liubiao', 'jz_huangzu', 'jz_caimao', 'jz_wentai', 'jz_huangzhong2', 'jz_weiyan2', 'jz_xingdaorong'] },
+    ],
+    mapTemplate: 'river_delta',
+    mode: 'faction_battle',
+  },
+  {
+    id: 'zhongyuan',
+    name: '中原大战',
+    description: '曹操袁绍西凉三方大战，争夺中原霸权',
+    year: '200年',
+    factions: [
+      { faction: 'wei', generalIds: ['caocao', 'simayi', 'zhangliao', 'dianwei', 'xuchu', 'guojia', 'xunyu', 'caoren'] },
+      { faction: 'yuan', generalIds: ['y_yuanshao', 'y_yanliang', 'y_wenchou', 'y_tianfeng', 'y_jushou', 'y_zhanghe2', 'y_gaolan', 'y_shenpei'] },
+      { faction: 'xiliang', generalIds: ['xl_mateng', 'xl_machao2', 'xl_hansui', 'xl_pangde2', 'xl_madai2', 'xl_yanxing'] },
+    ],
+    mapTemplate: 'crossroads',
+    mode: 'faction_battle',
+  },
+  {
+    id: 'lvbu_last',
+    name: '下邳之战',
+    description: '曹操水淹下邳，吕布白门楼殒命',
+    year: '199年',
+    alliances: [['wei', 'shu'], ['dong']],
+    factions: [
+      { faction: 'wei', generalIds: ['caocao', 'guojia', 'xiahoudun', 'xiahouyuan', 'dianwei', 'xuchu'] },
+      { faction: 'shu', generalIds: ['liubei', 'guanyu', 'zhangfei'] },
+      { faction: 'dong', generalIds: ['d_lvbu', 'd_gaoshun', 'd_chenggong', 'd_huaxiong', 'd_lilingqi', 'd_zangba'] },
+    ],
+    mapTemplate: 'fortress',
+    mode: 'faction_battle',
+  },
+  {
+    id: 'kingdom_end',
+    name: '三国归晋',
+    description: '司马家一统天下，终结三国',
+    year: '280年',
+    alliances: [['shu', 'wu'], ['jin']],
+    factions: [
+      { faction: 'jin', generalIds: ['j_simayan', 'j_simazhao', 'j_simashi', 'j_dengai2', 'j_zhonghui2', 'j_duyu', 'j_wangjun', 'j_yanghu', 'j_wenjyang', 'j_malong'] },
+      { faction: 'shu', generalIds: ['jiangwei', 'wangping', 'liaohua', 'feiyi', 'jiangwan'] },
+      { faction: 'wu', generalIds: ['lukang', 'dingfeng', 'zhuran', 'zhangzhao', 'lvfan'] },
+    ],
+    mapTemplate: 'great_wall',
+    mode: 'faction_battle',
+  },
 ]
 
 // Tournament bracket generation

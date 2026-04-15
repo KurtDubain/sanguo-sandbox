@@ -55,6 +55,8 @@ export function ConfigPanel() {
   const hasGods = allGenerals.some((g) => g.tags?.includes('god'))
   const godIds = GOD_GENERALS.map((g) => g.id)
 
+  const [showBattles, setShowBattles] = useState(false)
+
   // Track which factions are expanded (default: only factions with selected generals)
   const [expandedFactions, setExpandedFactions] = useState<Set<string>>(() => {
     const initial = new Set<string>()
@@ -160,29 +162,37 @@ export function ConfigPanel() {
         </div>
       </div>
 
-      {/* Historical battles */}
+      {/* Historical battles — collapsible */}
       <div>
-        <div className="text-[10px] text-gray-500 mb-1">历史战役</div>
-        <div className="flex flex-wrap gap-1">
-          {HISTORICAL_BATTLES.map((battle) => (
-            <button
-              key={battle.id}
-              onClick={() => {
-                const ids = battle.factions.flatMap((f) => f.generalIds)
-                useGameStore.setState({
-                  selectedGeneralIds: ids,
-                  mapTemplate: battle.mapTemplate,
-                  battleMode: battle.mode,
-                  alliances: battle.alliances ?? [],
-                })
-              }}
-              className="text-[10px] px-1.5 py-0.5 rounded border bg-gray-800 border-gray-700 text-gray-400 hover:bg-gray-700 hover:text-gray-200"
-              title={`${battle.year} ${battle.description}`}
-            >
-              {battle.name}
-            </button>
-          ))}
+        <div
+          className="text-[10px] text-gray-500 mb-1 cursor-pointer hover:text-gray-300 flex items-center gap-1"
+          onClick={() => setShowBattles(!showBattles)}
+        >
+          <span className="text-[9px]">{showBattles ? '▼' : '▶'}</span>
+          历史战役 ({HISTORICAL_BATTLES.length})
         </div>
+        {showBattles && (
+          <div className="flex flex-wrap gap-1">
+            {HISTORICAL_BATTLES.map((battle) => (
+              <button
+                key={battle.id}
+                onClick={() => {
+                  const ids = battle.factions.flatMap((f) => f.generalIds)
+                  useGameStore.setState({
+                    selectedGeneralIds: ids,
+                    mapTemplate: battle.mapTemplate,
+                    battleMode: battle.mode,
+                    alliances: battle.alliances ?? [],
+                  })
+                }}
+                className="text-[10px] px-1.5 py-0.5 rounded border bg-gray-800 border-gray-700 text-gray-400 hover:bg-gray-700 hover:text-gray-200"
+                title={`${battle.year} ${battle.description}${battle.alliances ? ' [联盟战]' : ''}`}
+              >
+                {battle.alliances ? '🤝' : ''}{battle.name}
+              </button>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* God mode */}
