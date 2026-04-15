@@ -196,7 +196,7 @@ export class BattleEngine {
       newEvents.push(...duelEvents)
     }
 
-    // 4. Command style system (faction-level style + commander death degradation)
+    // 4. Command style system (runs every tick for death detection, buffs every 50)
     const styleEvents = commandStyleSystem(this.state.units, this.state.mode, this.state.tick, this.rng)
     newEvents.push(...styleEvents)
 
