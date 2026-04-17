@@ -9,7 +9,7 @@ import {
   getChargeDamageBonus, consumeCharge, getAmbushBonus,
   commanderDeathCheck, isInDuel, activateChargeMoraleShield, hasChargeMoraleShield,
 } from './combatMechanics'
-import { areAllied } from '../utils/alliance'
+import { areAllied, isEnemy } from '../utils/alliance'
 
 const attackCooldowns = new Map<string, number>()
 
@@ -306,7 +306,7 @@ export function attackSystem(
         const burstDamage = Math.round(target.atk * BALANCE.DEATH_BURST_DAMAGE_RATIO)
         const nearbyEnemies = units.filter(
           (u) =>
-            u.faction !== target.faction &&
+            isEnemy(target.faction, u.faction, alliances) &&
             u.state !== 'dead' &&
             distance(u.position, target.position) < BALANCE.DEATH_BURST_RANGE
         )
@@ -354,7 +354,7 @@ export function attackSystem(
       )
       const cleaveTargets = units.filter(
         (u) => u.id !== target.id && u.id !== unit.id &&
-               u.state !== 'dead' && u.faction !== unit.faction &&
+               u.state !== 'dead' && isEnemy(unit.faction, u.faction, alliances) &&
                distance(unit.position, u.position) < BALANCE.CLEAVE_RANGE
       ).slice(0, maxCleave)
 

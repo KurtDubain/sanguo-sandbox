@@ -512,7 +512,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
       }
 
       const seed = Date.now() + completed * 7919
-      const engine = new BattleEngine(generals, battleMode, seed)
+      const engine = new BattleEngine(generals, battleMode, seed, get().mapTemplate, get().settings, get().formation, [], get().alliances ?? [])
       const battleResult = engine.runToEnd()
 
       if (battleResult.winner) {

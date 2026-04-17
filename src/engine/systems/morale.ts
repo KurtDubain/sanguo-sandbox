@@ -162,7 +162,7 @@ export function moraleSystem(
   for (const routed of newlyRouted) {
     for (const ally of units) {
       if (
-        ally.id === routed.id || ally.faction !== routed.faction ||
+        ally.id === routed.id || !areAllied(ally.faction, routed.faction, alliances) ||
         ally.state === 'dead' || ally.state === 'routed'
       ) continue
 

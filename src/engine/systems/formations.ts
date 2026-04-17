@@ -113,7 +113,7 @@ export function shieldWallCheck(units: BattleUnit[], tick: number): GameEvent[] 
 // Spearmen that are idle/holding position get a bonus against charging cavalry.
 // Applied as a defense buff when not moving.
 
-export function spearmanBraceCheck(units: BattleUnit[], tick: number): GameEvent[] {
+export function spearmanBraceCheck(units: BattleUnit[], tick: number, alliances: string[][] = []): GameEvent[] {
   if (tick % FORMATION_CHECK_INTERVAL !== 0) return []
 
   const spearmen = units.filter(
@@ -124,7 +124,7 @@ export function spearmanBraceCheck(units: BattleUnit[], tick: number): GameEvent
   for (const sp of spearmen) {
     // Check if any enemy cavalry is approaching
     const approachingCav = units.some(
-      (u) => u.troopType === 'cavalry' && u.faction !== sp.faction &&
+      (u) => u.troopType === 'cavalry' && !areAllied(sp.faction, u.faction, alliances) &&
              u.state === 'moving' && u.targetId === sp.id &&
              distance(u.position, sp.position) < 120
     )
@@ -220,7 +220,8 @@ export function surrenderCheck(
     ).length
 
     const nearbyEnemies = units.filter(
-      (u) => u.faction !== unit.faction && u.state !== 'dead' &&
+      (u) => u.state !== 'dead' &&
+             !areAllied(unit.faction, u.faction, alliances) &&
              distance(u.position, unit.position) < 150
     ).length
 

@@ -240,7 +240,7 @@ export class BattleEngine {
     if (this.settings.formations) {
       newEvents.push(...archerVolleyCheck(this.state.units, this.state.tick))
       newEvents.push(...shieldWallCheck(this.state.units, this.state.tick))
-      spearmanBraceCheck(this.state.units, this.state.tick)
+      spearmanBraceCheck(this.state.units, this.state.tick, this.state.alliances)
     }
     if (this.settings.warCry) {
       newEvents.push(...warCryCheck(this.state.units, this.state.tick, this.rng, this.state.alliances))
