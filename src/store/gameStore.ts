@@ -4,6 +4,7 @@ import { ALL_GENERALS, GOD_GENERALS, ALL_GENERALS_WITH_GODS } from '../config/ge
 import { VFXManager } from '../engine/utils/vfx'
 import { MapTemplate } from '../engine/utils/mapgen'
 import { FormationType } from '../config/formationDefs'
+import { FACTION_COLORS } from '../config/factionDisplay'
 import { saveMatchResult } from '../engine/utils/history'
 import {
   General,
@@ -61,7 +62,11 @@ interface GameStore {
   recentEvents: GameEvent[]
   vfxTick: number
   dramaticEvent: { message: string; color: string; tick: number } | null
-  slowMoTicks: number // ticks remaining of auto slow-mo
+  slowMoTicks: number
+
+  // Spawn zone dragging (setup phase)
+  spawnZones: { faction: string; x: number; y: number; color: string }[]
+  draggingZone: string | null // ticks remaining of auto slow-mo
 
   isPanelOpen: boolean
   activeTab: 'config' | 'log' | 'result' | 'batch' | 'settings' | 'history' | 'guide'
@@ -89,6 +94,8 @@ interface GameStore {
   toggleBoost: (id: string) => void
   updateSettings: (partial: Partial<GameSettings>) => void
   toggleGodMode: (enabled: boolean) => void
+  moveSpawnZone: (faction: string, x: number, y: number) => void
+  setDraggingZone: (faction: string | null) => void
 
   initBattle: () => void
   startBattle: () => void
@@ -184,6 +191,8 @@ export const useGameStore = create<GameStore>((set, get) => ({
   vfxTick: 0,
   dramaticEvent: null,
   slowMoTicks: 0,
+  spawnZones: [],
+  draggingZone: null,
 
   isPanelOpen: true,
   activeTab: 'config',
@@ -221,6 +230,10 @@ export const useGameStore = create<GameStore>((set, get) => ({
       ? s.boostedGeneralIds.filter((gid) => gid !== id)
       : [...s.boostedGeneralIds, id],
   })),
+  moveSpawnZone: (faction, x, y) => set((s) => ({
+    spawnZones: s.spawnZones.map((z) => z.faction === faction ? { ...z, x, y } : z),
+  })),
+  setDraggingZone: (faction) => set({ draggingZone: faction }),
   updateSettings: (partial) => set((s) => ({ settings: { ...s.settings, ...partial } })),
   toggleGodMode: (enabled) => {
     if (enabled) {
@@ -246,19 +259,84 @@ export const useGameStore = create<GameStore>((set, get) => ({
 
     vfxManager.clear()
     const engine = new BattleEngine(generals, battleMode, seed, mapTemplate, get().settings, get().formation, get().boostedGeneralIds, get().alliances ?? [])
+    const state = engine.getState()
+
+    // Generate draggable spawn zones from unit positions (group by faction)
+    const factionPositions = new Map<string, { xs: number[]; ys: number[] }>()
+    for (const unit of state.units) {
+      const fp = factionPositions.get(unit.faction) ?? { xs: [], ys: [] }
+      fp.xs.push(unit.position.x)
+      fp.ys.push(unit.position.y)
+      factionPositions.set(unit.faction, fp)
+    }
+    const zones = [...factionPositions.entries()].map(([faction, { xs, ys }]) => ({
+      faction,
+      x: xs.reduce((s, v) => s + v, 0) / xs.length,
+      y: ys.reduce((s, v) => s + v, 0) / ys.length,
+      color: FACTION_COLORS[faction] ?? '#888',
+    }))
+
     set({
       engine,
-      battleState: engine.getState(),
+      battleState: state,
       recentEvents: [],
       activeTab: 'log',
+      spawnZones: zones,
+      draggingZone: null,
     })
   },
 
   startBattle: () => {
-    const { engine } = get()
+    const { engine, spawnZones } = get()
     if (!engine) return
+    const state = engine.getState()
+
+    // Reposition units based on dragged spawn zones
+    if (spawnZones.length > 0) {
+      // Calculate offset for each faction (how much the zone was dragged from original center)
+      const factionOffsets = new Map<string, { dx: number; dy: number }>()
+      const originalCenters = new Map<string, { x: number; y: number }>()
+
+      // Compute original centers from current unit positions
+      for (const unit of state.units) {
+        const c = originalCenters.get(unit.faction) ?? { x: 0, y: 0 }
+        originalCenters.set(unit.faction, c)
+      }
+      const factionCounts = new Map<string, number>()
+      for (const unit of state.units) {
+        const c = originalCenters.get(unit.faction)!
+        c.x += unit.position.x
+        c.y += unit.position.y
+        factionCounts.set(unit.faction, (factionCounts.get(unit.faction) ?? 0) + 1)
+      }
+      for (const [f, c] of originalCenters) {
+        const n = factionCounts.get(f) ?? 1
+        c.x /= n
+        c.y /= n
+      }
+
+      // Compute offsets from zone positions
+      for (const zone of spawnZones) {
+        const orig = originalCenters.get(zone.faction)
+        if (orig) {
+          factionOffsets.set(zone.faction, { dx: zone.x - orig.x, dy: zone.y - orig.y })
+        }
+      }
+
+      // Apply offsets to all units
+      const mapW = state.map.width
+      const mapH = state.map.height
+      for (const unit of state.units) {
+        const off = factionOffsets.get(unit.faction)
+        if (off && (Math.abs(off.dx) > 5 || Math.abs(off.dy) > 5)) {
+          unit.position.x = Math.max(20, Math.min(mapW - 20, unit.position.x + off.dx))
+          unit.position.y = Math.max(20, Math.min(mapH - 20, unit.position.y + off.dy))
+        }
+      }
+    }
+
     engine.start()
-    set({ battleState: { ...engine.getState() } })
+    set({ battleState: { ...engine.getState() }, spawnZones: [] })
   },
 
   pauseBattle: () => {

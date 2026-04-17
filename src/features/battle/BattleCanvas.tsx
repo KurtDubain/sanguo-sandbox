@@ -99,6 +99,10 @@ export function BattleCanvas() {
   const vfxTick = useGameStore((s) => s.vfxTick)
   const selectedUnitId = useGameStore((s) => s.selectedUnitId)
   const selectUnit = useGameStore((s) => s.selectUnit)
+  const spawnZones = useGameStore((s) => s.spawnZones)
+  const moveSpawnZone = useGameStore((s) => s.moveSpawnZone)
+  const draggingZone = useGameStore((s) => s.draggingZone)
+  const setDraggingZone = useGameStore((s) => s.setDraggingZone)
   const animFrameRef = useRef<number>(0)
   const terrainCacheRef = useRef<ImageBitmap | null>(null)
   const terrainSeedRef = useRef<number>(-1)
@@ -194,6 +198,42 @@ export function BattleCanvas() {
     } else {
       ctx.drawImage(terrainCacheRef.current, 0, 0)
     }
+
+    // === Spawn zones (setup phase only — draggable faction circles) ===
+    if (state.phase === 'setup' && spawnZones.length > 0) {
+      for (const zone of spawnZones) {
+        const zoneR = 35
+
+        // Zone circle
+        ctx.beginPath()
+        ctx.arc(zone.x, zone.y, zoneR, 0, Math.PI * 2)
+        ctx.fillStyle = zone.color + '25'
+        ctx.fill()
+        ctx.strokeStyle = zone.color + (draggingZone === zone.faction ? 'cc' : '88')
+        ctx.lineWidth = draggingZone === zone.faction ? 3 : 2
+        ctx.setLineDash([6, 4])
+        ctx.stroke()
+        ctx.setLineDash([])
+
+        // Faction name
+        ctx.fillStyle = zone.color
+        ctx.font = 'bold 11px sans-serif'
+        ctx.textAlign = 'center'
+        ctx.textBaseline = 'middle'
+        const fNames: Record<string, string> = {
+          wei: '魏', shu: '蜀', wu: '吴', qun: '群', dong: '董',
+          yuan: '袁', xiliang: '凉', jingzhou: '荆', yizhou: '益', jin: '晋',
+        }
+        ctx.fillText(fNames[zone.faction] ?? zone.faction, zone.x, zone.y)
+
+        // Drag hint
+        ctx.font = '8px sans-serif'
+        ctx.fillStyle = 'rgba(255,255,255,0.3)'
+        ctx.fillText('拖拽', zone.x, zone.y + zoneR + 10)
+      }
+
+      // Don't draw individual units during setup
+    } else {
 
     // === Battle zone glow: highlight areas with most combat ===
     const attacking = units.filter((u) => u.state === 'attacking')
@@ -589,6 +629,8 @@ export function BattleCanvas() {
       ctx.globalAlpha = 1
     }
 
+    } // end of else (non-setup rendering)
+
     // === Weather visual overlay ===
     const weather = state.weather
     if (weather.type === 'rain') {
@@ -741,14 +783,49 @@ export function BattleCanvas() {
     if (e.button === 0) {
       isDragging.current = false
       lastDrag.current = { x: e.clientX, y: e.clientY }
+
+      // Check if clicking on a spawn zone (setup phase)
+      if (battleState?.phase === 'setup' && spawnZones.length > 0) {
+        const canvas = canvasRef.current
+        if (!canvas) return
+        const rect = canvas.getBoundingClientRect()
+        const sx = (e.clientX - rect.left) * (canvas.width / rect.width)
+        const sy = (e.clientY - rect.top) * (canvas.height / rect.height)
+        const world = screenToWorld(sx, sy, viewport)
+
+        for (const zone of spawnZones) {
+          const dx = zone.x - world.x
+          const dy = zone.y - world.y
+          if (Math.sqrt(dx * dx + dy * dy) < 40) {
+            setDraggingZone(zone.faction)
+            isDragging.current = true
+            return
+          }
+        }
+      }
     }
-  }, [])
+  }, [battleState, spawnZones, viewport, setDraggingZone])
 
   const handleMouseMove = useCallback((e: React.MouseEvent) => {
     if (e.buttons !== 1) return
+
+    // If dragging a spawn zone
+    if (draggingZone && battleState?.phase === 'setup') {
+      const canvas = canvasRef.current
+      if (!canvas) return
+      const rect = canvas.getBoundingClientRect()
+      const sx = (e.clientX - rect.left) * (canvas.width / rect.width)
+      const sy = (e.clientY - rect.top) * (canvas.height / rect.height)
+      const world = screenToWorld(sx, sy, viewport)
+      moveSpawnZone(draggingZone, world.x, world.y)
+      lastDrag.current = { x: e.clientX, y: e.clientY }
+      return
+    }
+
+    // Normal viewport panning
     const dx = e.clientX - lastDrag.current.x
     const dy = e.clientY - lastDrag.current.y
-    if (Math.abs(dx) > 8 || Math.abs(dy) > 8) isDragging.current = true // raised from 3 to 8
+    if (Math.abs(dx) > 8 || Math.abs(dy) > 8) isDragging.current = true
     const canvas = canvasRef.current
     if (!canvas) return
     const rect = canvas.getBoundingClientRect()
@@ -761,6 +838,13 @@ export function BattleCanvas() {
     }))
     lastDrag.current = { x: e.clientX, y: e.clientY }
   }, [])
+
+  // Mouse up: stop dragging spawn zone
+  const handleMouseUp = useCallback(() => {
+    if (draggingZone) {
+      setDraggingZone(null)
+    }
+  }, [draggingZone, setDraggingZone])
 
   // Touch support: tap to select, drag to pan, pinch to zoom
   const touchStartPos = useRef({ x: 0, y: 0 })
@@ -830,6 +914,7 @@ export function BattleCanvas() {
       onWheel={handleWheel}
       onMouseDown={handleMouseDown}
       onMouseMove={handleMouseMove}
+      onMouseUp={handleMouseUp}
       onTouchStart={handleTouchStart}
       onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}
