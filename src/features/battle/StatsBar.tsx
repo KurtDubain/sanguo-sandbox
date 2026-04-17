@@ -21,24 +21,22 @@ export function StatsBar() {
   const entries = [...factions.entries()].sort((a, b) => b[1].alive - a[1].alive)
 
   return (
-    <div className="flex items-center gap-2 px-3 py-1 bg-gray-900/80 border-t border-gray-800 text-[10px] shrink-0 overflow-x-auto">
+    <div className="flex items-center gap-1 sm:gap-2 px-2 py-0.5 sm:py-1 bg-gray-900/80 border-t border-gray-800 text-[9px] sm:text-[10px] shrink-0 overflow-x-auto no-scrollbar">
       {entries.map(([faction, stats]) => {
         const pct = totalAlive > 0 ? Math.round(stats.alive / totalAlive * 100) : 0
         return (
-          <div key={faction} className="flex items-center gap-1.5 whitespace-nowrap">
-            <span className="w-2 h-2 rounded-full" style={{ backgroundColor: FACTION_COLORS[faction] }} />
+          <div key={faction} className="flex items-center gap-1 whitespace-nowrap">
+            <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: FACTION_COLORS[faction] }} />
             <span style={{ color: FACTION_COLORS[faction] }} className="font-medium">
               {FACTION_NAMES[faction]}
             </span>
             <span className="text-gray-400">
-              {stats.alive}/{stats.total}
+              {stats.alive}
             </span>
-            {/* Health bar */}
-            <div className="w-12 h-1.5 bg-gray-800 rounded-full overflow-hidden">
+            <div className="w-8 sm:w-12 h-1 sm:h-1.5 bg-gray-800 rounded-full overflow-hidden shrink-0">
               <div className="h-full rounded-full" style={{ width: `${pct}%`, backgroundColor: FACTION_COLORS[faction] }} />
             </div>
-            <span className="text-gray-500">杀{stats.kills}</span>
-            <div className="w-px h-3 bg-gray-800 mx-0.5" />
+            <span className="text-gray-500 hidden sm:inline">杀{stats.kills}</span>
           </div>
         )
       })}

@@ -30,3 +30,7 @@ body {
 ::-webkit-scrollbar-thumb:hover {
   background: #5a5e6e;
 }
+
+/* Hide scrollbar for horizontal scroll tabs */
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }

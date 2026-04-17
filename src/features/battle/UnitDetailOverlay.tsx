@@ -23,9 +23,9 @@ export function UnitDetailOverlay() {
 
   return (
     <div
-      className="absolute bottom-1 left-1 right-1 sm:bottom-2 sm:left-auto sm:right-2 sm:w-72
-        bg-gray-900/95 border border-gray-700 rounded-lg p-2 sm:p-3 backdrop-blur-sm z-10
-        max-h-[45vh] overflow-y-auto"
+      className="absolute bottom-0 left-0 right-0 sm:bottom-2 sm:left-auto sm:right-2 sm:w-72
+        bg-gray-900/95 border-t sm:border border-gray-700 sm:rounded-lg p-2 backdrop-blur-sm z-10
+        max-h-[40vh] overflow-y-auto"
     >
       <button
         onClick={() => selectUnit(null)}
@@ -43,10 +43,11 @@ export function UnitDetailOverlay() {
         </span>
       </div>
 
-      <div className="flex gap-3">
-        {/* Radar chart */}
+      <div className="flex gap-2 sm:gap-3">
+        {/* Radar chart — smaller on mobile */}
+        <div className="shrink-0">
         <RadarChart
-          size={100}
+          size={70}
           color={fc}
           values={[
             { label: '统', value: unit.command, max: 100 },
@@ -57,9 +58,10 @@ export function UnitDetailOverlay() {
             { label: '德', value: unit.charisma, max: 100 },
           ]}
         />
+        </div>
 
         {/* Stats */}
-        <div className="flex-1 text-xs space-y-1">
+        <div className="flex-1 text-[11px] sm:text-xs space-y-0.5 sm:space-y-1">
           <div className="flex justify-between">
             <span className="text-gray-400">状态</span>
             <span className={unit.state === 'dead' ? 'text-red-400' : 'text-green-400'}>

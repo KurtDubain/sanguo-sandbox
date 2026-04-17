@@ -30,17 +30,18 @@ export default function App() {
 
   return (
     <div className="h-[100dvh] flex flex-col bg-[#0a0e17] text-[#d4c9a8] overflow-hidden">
-      {/* Header — compact on mobile */}
-      <header className="flex items-center justify-between px-2 sm:px-3 py-1 bg-gray-900/60 border-b border-gray-800 shrink-0">
-        <h1 className="text-xs sm:text-sm md:text-base font-bold tracking-wide text-amber-200/80 truncate flex items-center gap-1.5">
-          <img src="/favicon.svg" alt="" className="w-5 h-5 sm:w-6 sm:h-6" />
-          三国演弈
+      {/* Header — minimal on mobile */}
+      <header className="flex items-center justify-between px-2 py-1 bg-gray-900/60 border-b border-gray-800 shrink-0">
+        <h1 className="text-xs sm:text-sm font-bold text-amber-200/80 truncate flex items-center gap-1">
+          <img src="/favicon.svg" alt="" className="w-4 h-4 sm:w-5 sm:h-5" />
+          <span className="hidden sm:inline">三国演弈</span>
+          <span className="sm:hidden">演弈</span>
         </h1>
-        <div className="flex items-center gap-1.5 text-xs text-gray-500 shrink-0">
-          <span className="hidden md:inline">空格=暂停 1-4=速度 R=重开</span>
+        <div className="flex items-center gap-1 shrink-0">
+          <span className="hidden md:inline text-xs text-gray-500">空格=暂停 R=重开</span>
           <button
             onClick={togglePanel}
-            className="text-gray-400 hover:text-gray-200 text-[10px] sm:text-xs px-1.5 py-0.5 border border-gray-700 rounded"
+            className="text-gray-400 hover:text-gray-200 text-[10px] sm:text-xs px-1.5 py-1 border border-gray-700 rounded min-h-[28px]"
           >
             {isPanelOpen ? '收起' : '面板'}
           </button>
@@ -48,24 +49,24 @@ export default function App() {
       </header>
 
       {/* Control bar */}
-      <div className="px-1.5 sm:px-2 md:px-4 py-1 shrink-0">
+      <div className="px-1 sm:px-2 md:px-4 py-0.5 sm:py-1 shrink-0">
         <ControlBar />
       </div>
 
       {/* Main content */}
-      <div className="flex-1 flex flex-col lg:flex-row min-h-0 px-1.5 sm:px-2 md:px-4 pb-1 gap-1.5">
+      <div className="flex-1 flex flex-col lg:flex-row min-h-0 px-1 sm:px-2 md:px-4 pb-1 gap-1">
 
-        {/* Side panel */}
+        {/* Side panel — bottom sheet on mobile */}
         {isPanelOpen && (
           <div className="lg:w-72 xl:w-80 flex flex-col bg-gray-900/40 border border-gray-800 rounded-lg overflow-hidden shrink-0
-            max-h-[30vh] lg:max-h-none order-2 lg:order-1">
-            {/* Tab bar — scrollable on mobile */}
-            <div className="flex border-b border-gray-800 shrink-0 overflow-x-auto">
+            max-h-[28vh] lg:max-h-none order-2 lg:order-1">
+            {/* Tab bar — horizontally scrollable */}
+            <div className="flex border-b border-gray-800 shrink-0 overflow-x-auto no-scrollbar">
               {TABS.map((tab) => (
                 <button
                   key={tab.key}
                   onClick={() => setActiveTab(tab.key)}
-                  className={`shrink-0 text-[10px] sm:text-xs px-2 sm:px-3 py-1.5 transition-colors whitespace-nowrap ${
+                  className={`shrink-0 text-[10px] sm:text-xs px-2 sm:px-3 py-2 min-h-[32px] transition-colors whitespace-nowrap ${
                     activeTab === tab.key
                       ? 'text-amber-300 border-b-2 border-amber-400 bg-gray-800/30'
                       : 'text-gray-500 hover:text-gray-300'
@@ -99,7 +100,7 @@ export default function App() {
         </div>
       </div>
 
-      {/* Bottom stats bar */}
+      {/* Bottom stats bar — compact on mobile */}
       <StatsBar />
     </div>
   )
