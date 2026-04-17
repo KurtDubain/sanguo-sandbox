@@ -3,12 +3,14 @@ import { BALANCE } from '../../config/balance'
 import { distance } from '../utils/math'
 import { SeededRandom } from '../utils/random'
 import { getWeatherModifiers } from './weather'
+import { areAllied } from '../utils/alliance'
 
 export function moraleSystem(
   units: BattleUnit[],
   tick: number,
   rng: SeededRandom,
   weather: WeatherState,
+  alliances: string[][] = [],
 ): GameEvent[] {
   const events: GameEvent[] = []
   const newlyRouted: BattleUnit[] = []
@@ -20,7 +22,6 @@ export function moraleSystem(
     if (u.state === 'dead') continue
     factionAlive.set(u.faction, (factionAlive.get(u.faction) ?? 0) + 1)
   }
-  const totalAlive = units.filter((u) => u.state !== 'dead').length
 
   for (const unit of units) {
     if (unit.state === 'dead') continue
@@ -51,7 +52,8 @@ export function moraleSystem(
     // Charisma aura (throttled: every 4 ticks, only high charisma)
     if (unit.charisma >= 55 && tick % 4 === 0) {
       for (const ally of units) {
-        if (ally.id === unit.id || ally.faction !== unit.faction || ally.state === 'dead') continue
+        if (ally.id === unit.id || ally.state === 'dead') continue
+        if (!areAllied(unit.faction, ally.faction, alliances)) continue
         if (distance(unit.position, ally.position) < BALANCE.MORALE_CHARISMA_AURA_RANGE) {
           ally.morale += unit.charisma * BALANCE.CHARISMA_AURA * 0.2
         }
@@ -60,8 +62,9 @@ export function moraleSystem(
 
     // Formation comfort: nearby non-routed allies
     const nearbyAllies = units.filter(
-      (u) => u.id !== unit.id && u.faction === unit.faction &&
+      (u) => u.id !== unit.id &&
              u.state !== 'dead' && u.state !== 'routed' &&
+             areAllied(unit.faction, u.faction, alliances) &&
              distance(u.position, unit.position) < BALANCE.FORMATION_RANGE
     )
     if (nearbyAllies.length > 0) {
@@ -89,9 +92,14 @@ export function moraleSystem(
     // Weather drain
     unit.morale -= wm.moraleDrain
 
-    // Outnumbered penalty (using pre-computed counts)
-    const aliveAllies = (factionAlive.get(unit.faction) ?? 0) - 1
-    const aliveEnemies = totalAlive - (factionAlive.get(unit.faction) ?? 0)
+    // Outnumbered penalty (alliance-aware)
+    let aliveAllies = 0
+    let aliveEnemies = 0
+    for (const u of units) {
+      if (u.state === 'dead' || u.id === unit.id) continue
+      if (areAllied(unit.faction, u.faction, alliances)) aliveAllies++
+      else aliveEnemies++
+    }
     if (aliveEnemies > 0 && aliveAllies === 0) {
       unit.morale -= 0.25  // reduced from 0.4
     } else if (aliveEnemies > aliveAllies * 2) {

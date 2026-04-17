@@ -229,11 +229,11 @@ export class BattleEngine {
     movementSystem(this.state.units, this.state.map, this.rng, this.state.weather, tactOrders, this.state.mode, this.state.alliances)
 
     // 8. Attack
-    const attackEvents = attackSystem(this.state.units, this.state.tick, this.rng, this.state.weather, this.state.map)
+    const attackEvents = attackSystem(this.state.units, this.state.tick, this.rng, this.state.weather, this.state.map, this.state.alliances)
     newEvents.push(...attackEvents)
 
     // 9. Morale
-    const moraleEvents = moraleSystem(this.state.units, this.state.tick, this.rng, this.state.weather)
+    const moraleEvents = moraleSystem(this.state.units, this.state.tick, this.rng, this.state.weather, this.state.alliances)
     newEvents.push(...moraleEvents)
 
     // 10. Formation mechanics
@@ -243,10 +243,10 @@ export class BattleEngine {
       spearmanBraceCheck(this.state.units, this.state.tick)
     }
     if (this.settings.warCry) {
-      newEvents.push(...warCryCheck(this.state.units, this.state.tick, this.rng))
+      newEvents.push(...warCryCheck(this.state.units, this.state.tick, this.rng, this.state.alliances))
     }
     if (this.settings.surrender) {
-      newEvents.push(...surrenderCheck(this.state.units, this.state.tick, this.rng))
+      newEvents.push(...surrenderCheck(this.state.units, this.state.tick, this.rng, this.state.alliances))
     }
 
     // 11. Terrain interaction (fire spread, flooding, mountain advantage)
@@ -355,9 +355,16 @@ export class BattleEngine {
 
   reset(seed?: number): void {
     const newSeed = seed ?? this.state.seed
-    const engine = new BattleEngine(this.generals, this.state.mode, newSeed, this.mapTemplate, this.settings)
+    const engine = new BattleEngine(
+      this.generals, this.state.mode, newSeed, this.mapTemplate,
+      this.settings, 'none', [], this.state.alliances,
+    )
     Object.assign(this.state, engine.getState())
     this.rng = new SeededRandom(newSeed)
     resetAttackCooldowns()
+    resetPaths()
+    resetCombatMechanics()
+    resetTerrainInteraction()
+    resetCommandStyles()
   }
 }

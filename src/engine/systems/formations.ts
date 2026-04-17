@@ -4,6 +4,7 @@ import { BattleUnit, GameEvent } from '../../types'
 import { distance } from '../utils/math'
 import { SeededRandom } from '../utils/random'
 import { FACTION_NAMES } from '../../config/factionDisplay'
+import { areAllied } from '../utils/alliance'
 
 const FORMATION_CHECK_INTERVAL = 12 // check every 12 ticks
 
@@ -155,17 +156,19 @@ export function warCryCheck(
   units: BattleUnit[],
   tick: number,
   rng: SeededRandom,
+  alliances: string[][] = [],
 ): GameEvent[] {
-  if (tick % 45 !== 0) return [] // every 45 ticks (was 60)
+  if (tick % 45 !== 0) return []
   const events: GameEvent[] = []
 
   for (const unit of units) {
     if (unit.state === 'dead' || unit.charisma < 80) continue
-    if (!rng.chance(0.45)) continue // 45% chance per check (was 30%)
+    if (!rng.chance(0.45)) continue
 
     const allies = units.filter(
-      (u) => u.id !== unit.id && u.faction === unit.faction &&
-             u.state !== 'dead' && distance(u.position, unit.position) < 120
+      (u) => u.id !== unit.id && u.state !== 'dead' &&
+             areAllied(unit.faction, u.faction, alliances) &&
+             distance(u.position, unit.position) < 120
     )
 
     if (allies.length < 2) continue
@@ -198,6 +201,7 @@ export function surrenderCheck(
   units: BattleUnit[],
   tick: number,
   rng: SeededRandom,
+  alliances: string[][] = [],
 ): GameEvent[] {
   if (tick % 30 !== 0) return []
   const events: GameEvent[] = []
@@ -210,8 +214,9 @@ export function surrenderCheck(
 
     // Check if alone
     const nearbyAllies = units.filter(
-      (u) => u.id !== unit.id && u.faction === unit.faction &&
-             u.state !== 'dead' && distance(u.position, unit.position) < 300  // wider check (was 200)
+      (u) => u.id !== unit.id && u.state !== 'dead' &&
+             areAllied(unit.faction, u.faction, alliances) &&
+             distance(u.position, unit.position) < 300
     ).length
 
     const nearbyEnemies = units.filter(

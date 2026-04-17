@@ -9,6 +9,7 @@ import {
   getChargeDamageBonus, consumeCharge, getAmbushBonus,
   commanderDeathCheck, isInDuel, activateChargeMoraleShield, hasChargeMoraleShield,
 } from './combatMechanics'
+import { areAllied } from '../utils/alliance'
 
 const attackCooldowns = new Map<string, number>()
 
@@ -22,6 +23,7 @@ export function attackSystem(
   rng: SeededRandom,
   weather: WeatherState,
   map?: import('../../types').BattleMap,
+  alliances: string[][] = [],
 ): GameEvent[] {
   const events: GameEvent[] = []
   const wm = getWeatherModifiers(weather)
@@ -330,7 +332,8 @@ export function attackSystem(
 
       // Nearby allies of the dead unit lose morale
       for (const ally of units) {
-        if (ally.faction === target.faction && ally.state !== 'dead' && ally.id !== target.id) {
+        if (ally.state !== 'dead' && ally.id !== target.id &&
+            areAllied(ally.faction, target.faction, alliances)) {
           const d = distance(ally.position, target.position)
           if (d < 150) {
             ally.morale -= BALANCE.MORALE_NEARBY_DEATH_PENALTY
