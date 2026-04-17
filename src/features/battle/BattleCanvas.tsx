@@ -919,8 +919,8 @@ export function BattleCanvas() {
       onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}
       onDoubleClick={handleDoubleClick}
-      className="border border-gray-700 rounded-lg bg-[#0f1610] w-full h-full object-contain cursor-grab active:cursor-grabbing touch-none"
-      style={{ maxHeight: '100%', aspectRatio: '3/2' }}
+      className="border border-gray-700/50 rounded bg-[#0f1610] w-full h-full cursor-grab active:cursor-grabbing touch-none"
+      style={{ objectFit: 'contain' }}
     />
   )
 }
