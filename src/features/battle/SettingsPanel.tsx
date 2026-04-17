@@ -1,4 +1,4 @@
-import { useGameStore, GameSettings } from '../../store/gameStore'
+import { useGameStore, GameSettings, DisplaySettings } from '../../store/gameStore'
 
 const SETTING_GROUPS: {
   title: string
@@ -32,8 +32,18 @@ const SETTING_GROUPS: {
   },
 ]
 
+const DISPLAY_ITEMS: { key: keyof DisplaySettings; label: string; desc: string }[] = [
+  { key: 'showNames', label: '将领名称', desc: '单位下方显示名字' },
+  { key: 'showHpBars', label: '血量/士气条', desc: '单位上方的HP和士气条' },
+  { key: 'showTrails', label: '移动尾迹', desc: '单位移动时的轨迹线' },
+  { key: 'showDamageNumbers', label: '伤害数字', desc: '攻击时弹出的浮动数字' },
+  { key: 'showMinimap', label: '小地图', desc: '右下角的全局视野小地图' },
+  { key: 'showTargetLines', label: '目标连线', desc: '单位和攻击目标之间的线' },
+  { key: 'showWeatherEffects', label: '天气特效', desc: '雨线/雾幕/风痕视觉效果' },
+]
+
 export function SettingsPanel() {
-  const { settings, updateSettings } = useGameStore()
+  const { settings, display, updateSettings, updateDisplay } = useGameStore()
 
   const enableAll = () => {
     const all: Partial<GameSettings> = {}
@@ -47,53 +57,58 @@ export function SettingsPanel() {
     updateSettings(all)
   }
 
-  const enabledCount = Object.values(settings).filter(Boolean).length
-  const totalCount = Object.keys(settings).length
-
   return (
-    <div className="flex flex-col gap-3 h-full overflow-y-auto p-3">
+    <div className="flex flex-col gap-2 h-full overflow-y-auto p-2 sm:p-3">
       <div className="flex items-center justify-between">
         <h3 className="text-sm font-semibold text-gray-200">游戏设置</h3>
         <div className="flex gap-1">
           <button onClick={enableAll}
-            className="text-[10px] px-1.5 py-0.5 bg-gray-700 hover:bg-gray-600 rounded text-gray-300">
-            全开
-          </button>
+            className="text-[10px] px-1.5 py-0.5 bg-gray-700 hover:bg-gray-600 rounded text-gray-300">全开</button>
           <button onClick={disableAll}
-            className="text-[10px] px-1.5 py-0.5 bg-gray-700 hover:bg-gray-600 rounded text-gray-300">
-            全关
-          </button>
+            className="text-[10px] px-1.5 py-0.5 bg-gray-700 hover:bg-gray-600 rounded text-gray-300">全关</button>
         </div>
       </div>
 
-      <div className="text-[10px] text-gray-500">
-        {enabledCount}/{totalCount} 项已启用 · 重开生效
-      </div>
+      <div className="text-[10px] text-gray-500">战斗设置重开生效 · 显示设置立即生效</div>
 
       {SETTING_GROUPS.map((group) => (
         <div key={group.title}>
-          <div className="text-[10px] text-gray-400 font-medium mb-1">{group.title}</div>
-          <div className="space-y-1">
+          <div className="text-[10px] text-gray-400 font-medium mb-0.5">{group.title}</div>
+          <div className="space-y-0.5">
             {group.items.map((item) => (
-              <label
-                key={item.key}
-                className="flex items-start gap-2 p-1.5 rounded cursor-pointer hover:bg-gray-800/30 transition-colors"
-              >
-                <input
-                  type="checkbox"
-                  checked={settings[item.key]}
+              <label key={item.key}
+                className="flex items-center gap-2 p-1 rounded cursor-pointer hover:bg-gray-800/30">
+                <input type="checkbox" checked={settings[item.key]}
                   onChange={(e) => updateSettings({ [item.key]: e.target.checked })}
-                  className="w-3 h-3 accent-amber-500 mt-0.5 shrink-0"
-                />
-                <div>
-                  <div className="text-xs text-gray-200">{item.label}</div>
-                  <div className="text-[10px] text-gray-500 leading-tight">{item.desc}</div>
+                  className="w-3.5 h-3.5 accent-amber-500 shrink-0" />
+                <div className="min-w-0">
+                  <span className="text-[11px] text-gray-200">{item.label}</span>
+                  <span className="text-[10px] text-gray-500 ml-1 hidden sm:inline">{item.desc}</span>
                 </div>
               </label>
             ))}
           </div>
         </div>
       ))}
+
+      {/* Display settings */}
+      <div>
+        <div className="text-[10px] text-gray-400 font-medium mb-0.5">显示设置</div>
+        <div className="space-y-0.5">
+          {DISPLAY_ITEMS.map((item) => (
+            <label key={item.key}
+              className="flex items-center gap-2 p-1 rounded cursor-pointer hover:bg-gray-800/30">
+              <input type="checkbox" checked={display[item.key]}
+                onChange={(e) => updateDisplay({ [item.key]: e.target.checked })}
+                className="w-3.5 h-3.5 accent-sky-500 shrink-0" />
+              <div className="min-w-0">
+                <span className="text-[11px] text-gray-200">{item.label}</span>
+                <span className="text-[10px] text-gray-500 ml-1 hidden sm:inline">{item.desc}</span>
+              </div>
+            </label>
+          ))}
+        </div>
+      </div>
     </div>
   )
 }

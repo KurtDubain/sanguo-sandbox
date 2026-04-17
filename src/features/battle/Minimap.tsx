@@ -9,6 +9,7 @@ const TERRAIN_MINI: Record<string, string> = {
 export function Minimap() {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const battleState = useGameStore((s) => s.battleState)
+  const showMinimap = useGameStore((s) => s.display.showMinimap)
 
   const draw = useCallback(() => {
     const canvas = canvasRef.current
@@ -63,7 +64,7 @@ export function Minimap() {
     draw()
   }, [draw])
 
-  if (!battleState) return null
+  if (!battleState || !showMinimap) return null
 
   return (
     <canvas

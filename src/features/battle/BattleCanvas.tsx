@@ -103,6 +103,7 @@ export function BattleCanvas() {
   const moveSpawnZone = useGameStore((s) => s.moveSpawnZone)
   const draggingZone = useGameStore((s) => s.draggingZone)
   const setDraggingZone = useGameStore((s) => s.setDraggingZone)
+  const display = useGameStore((s) => s.display)
   const animFrameRef = useRef<number>(0)
   const terrainCacheRef = useRef<ImageBitmap | null>(null)
   const terrainSeedRef = useRef<number>(-1)
@@ -249,6 +250,7 @@ export function BattleCanvas() {
     }
 
     // === VFX: Unit trails (before units) ===
+    if (display.showTrails) {
     for (const [, trail] of vfxManager.trails) {
       if (trail.points.length < 2) continue
       ctx.beginPath()
@@ -259,6 +261,8 @@ export function BattleCanvas() {
       ctx.strokeStyle = trail.color + '20'
       ctx.lineWidth = 1.5
       ctx.stroke()
+    }
+
     }
 
     // === VFX: Skill bursts (draw behind units) ===
@@ -395,6 +399,7 @@ export function BattleCanvas() {
     }
 
     // === Draw target lines ===
+    if (display.showTargetLines) {
     for (const unit of units) {
       if (unit.state === 'dead' || !unit.targetId) continue
       if (unit.state !== 'attacking' && unit.state !== 'moving') continue
@@ -406,6 +411,8 @@ export function BattleCanvas() {
       ctx.strokeStyle = unit.state === 'attacking' ? 'rgba(255,80,80,0.15)' : 'rgba(255,255,255,0.06)'
       ctx.lineWidth = 0.6
       ctx.stroke()
+    }
+
     }
 
     // === Draw units ===
@@ -483,21 +490,23 @@ export function BattleCanvas() {
       ctx.stroke()
 
       // HP bar
-      const bw = R * 2
-      const bx = x - R
-      const by = y - R - 4
+      if (display.showHpBars) {
+        const bw = R * 2
+        const bx = x - R
+        const by = y - R - 4
 
-      ctx.fillStyle = '#111'
-      ctx.fillRect(bx, by, bw, 2.5)
-      ctx.fillStyle = hpPct > 0.5 ? '#3d9' : hpPct > 0.25 ? '#da3' : '#d44'
-      ctx.fillRect(bx, by, bw * hpPct, 2.5)
+        ctx.fillStyle = '#111'
+        ctx.fillRect(bx, by, bw, 2.5)
+        ctx.fillStyle = hpPct > 0.5 ? '#3d9' : hpPct > 0.25 ? '#da3' : '#d44'
+        ctx.fillRect(bx, by, bw * hpPct, 2.5)
 
-      // Morale bar
-      const mpct = unit.morale / unit.maxMorale
-      ctx.fillStyle = '#0a0a0a'
-      ctx.fillRect(bx, by + 3, bw, 1.5)
-      ctx.fillStyle = mpct > 0.5 ? '#469' : mpct > 0.2 ? '#a73' : '#a33'
-      ctx.fillRect(bx, by + 3, bw * mpct, 1.5)
+        // Morale bar
+        const mpct = unit.morale / unit.maxMorale
+        ctx.fillStyle = '#0a0a0a'
+        ctx.fillRect(bx, by + 3, bw, 1.5)
+        ctx.fillStyle = mpct > 0.5 ? '#469' : mpct > 0.2 ? '#a73' : '#a33'
+        ctx.fillRect(bx, by + 3, bw * mpct, 1.5)
+      }
 
       // Troop glyph
       ctx.font = `${glyphSize}px sans-serif`
@@ -507,10 +516,12 @@ export function BattleCanvas() {
       ctx.fillText(TROOP_GLYPHS[unit.troopType] ?? '', x, y + 0.5)
 
       // Name
-      ctx.font = `${nameSize}px sans-serif`
-      ctx.fillStyle = routed ? 'rgba(160,100,100,0.5)' : '#bbb'
-      ctx.textBaseline = 'top'
-      ctx.fillText(unit.name, x, y + R + 1)
+      if (display.showNames) {
+        ctx.font = `${nameSize}px sans-serif`
+        ctx.fillStyle = routed ? 'rgba(160,100,100,0.5)' : '#bbb'
+        ctx.textBaseline = 'top'
+        ctx.fillText(unit.name, x, y + R + 1)
+      }
 
       // Selected unit highlight
       if (unit.id === selectedUnitId) {
@@ -617,6 +628,7 @@ export function BattleCanvas() {
     }
 
     // === VFX: Floating text (damage numbers, morale text) ===
+    if (display.showDamageNumbers) {
     for (const ft of vfxManager.floatingTexts) {
       const alpha = Math.max(0, 1 - ft.age / ft.maxAge)
       const yOff = -ft.age * 0.6
@@ -629,10 +641,13 @@ export function BattleCanvas() {
       ctx.globalAlpha = 1
     }
 
+    } // end showDamageNumbers
+
     } // end of else (non-setup rendering)
 
     // === Weather visual overlay ===
     const weather = state.weather
+    if (display.showWeatherEffects) {
     if (weather.type === 'rain') {
       ctx.globalAlpha = weather.intensity * 0.15
       ctx.fillStyle = '#4477aa'
@@ -666,6 +681,8 @@ export function BattleCanvas() {
         ctx.stroke()
       }
     }
+
+    } // end showWeatherEffects
 
     // === Reset transform for HUD (screen-space) ===
     resetTransform(ctx)

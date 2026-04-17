@@ -32,6 +32,26 @@ export interface GameSettings {
   randomModifiers: boolean
 }
 
+export interface DisplaySettings {
+  showNames: boolean
+  showHpBars: boolean
+  showTrails: boolean
+  showDamageNumbers: boolean
+  showMinimap: boolean
+  showTargetLines: boolean
+  showWeatherEffects: boolean
+}
+
+export const DEFAULT_DISPLAY: DisplaySettings = {
+  showNames: true,
+  showHpBars: true,
+  showTrails: true,
+  showDamageNumbers: true,
+  showMinimap: true,
+  showTargetLines: true,
+  showWeatherEffects: true,
+}
+
 export const DEFAULT_SETTINGS: GameSettings = {
   weather: true,
   dangerZone: true,
@@ -56,6 +76,7 @@ interface GameStore {
   alliances: string[][]
   seed: number
   settings: GameSettings
+  display: DisplaySettings
 
   engine: BattleEngine | null
   battleState: BattleState | null
@@ -93,6 +114,7 @@ interface GameStore {
   selectUnit: (id: string | null) => void
   toggleBoost: (id: string) => void
   updateSettings: (partial: Partial<GameSettings>) => void
+  updateDisplay: (partial: Partial<DisplaySettings>) => void
   toggleGodMode: (enabled: boolean) => void
   moveSpawnZone: (faction: string, x: number, y: number) => void
   setDraggingZone: (faction: string | null) => void
@@ -184,6 +206,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
   alliances: [] as string[][],
   seed: Math.floor(Math.random() * 100000),
   settings: { ...DEFAULT_SETTINGS },
+  display: { ...DEFAULT_DISPLAY },
 
   engine: null,
   battleState: null,
@@ -235,6 +258,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
   })),
   setDraggingZone: (faction) => set({ draggingZone: faction }),
   updateSettings: (partial) => set((s) => ({ settings: { ...s.settings, ...partial } })),
+  updateDisplay: (partial) => set((s) => ({ display: { ...s.display, ...partial } })),
   toggleGodMode: (enabled) => {
     if (enabled) {
       const currentIds = get().selectedGeneralIds
