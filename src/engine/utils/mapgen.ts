@@ -160,6 +160,26 @@ function genValley(t: TerrainType[][], cols: number, rows: number, rng: SeededRa
   }
   placeBridgesH(t, cols, rows, rng, 3)
   punchPasses(t, cols, rows, rng, 2)
+
+  // Fortified checkpoint in the center of the valley
+  const fortX = Math.floor(cols / 2)
+  placeSmallFort(t, fortX, midY, 3, 2, cols, rows, ['e', 'w'])
+  for (let dy = -1; dy <= 1; dy++) {
+    for (let dx = -2; dx <= 2; dx++) {
+      const x = fortX + dx, y = midY + dy
+      if (x >= 0 && x < cols && y >= 0 && y < rows) t[y][x] = 'plain'
+    }
+  }
+
+  // Watchtowers at pass entrances
+  if (rng.chance(0.7)) {
+    const passX1 = Math.floor(cols * 0.3)
+    placeSmallFort(t, passX1, midY - 4, 2, 1, cols, rows, ['s'])
+  }
+  if (rng.chance(0.7)) {
+    const passX2 = Math.floor(cols * 0.7)
+    placeSmallFort(t, passX2, midY + 4, 2, 1, cols, rows, ['n'])
+  }
 }
 
 // ============ Crossroads ============
@@ -167,24 +187,45 @@ function genCrossroads(t: TerrainType[][], cols: number, rows: number, rng: Seed
   const midX = Math.floor(cols / 2), midY = Math.floor(rows / 2)
   const roadW = 3
 
-  // Fill quadrants with noise
+  // Fill quadrants with noise forests
   for (let y = 0; y < rows; y++) {
     for (let x = 0; x < cols; x++) {
       if (Math.abs(x - midX) < roadW || Math.abs(y - midY) < roadW) continue
       if (isInSafeZone(x, y, cols, rows)) continue
       const n = fbm(x, y, seed)
-      if (n > 0.65) t[y][x] = 'forest'
+      if (n > 0.6) t[y][x] = 'forest'
     }
   }
-  // Mountain clusters in quadrant centers (NOT corners!)
-  const qCenters = [
-    [Math.floor(cols * 0.3), Math.floor(rows * 0.3)],
-    [Math.floor(cols * 0.7), Math.floor(rows * 0.3)],
-    [Math.floor(cols * 0.3), Math.floor(rows * 0.7)],
-    [Math.floor(cols * 0.7), Math.floor(rows * 0.7)],
+
+  // Central crossroads fort (small watchtower)
+  placeSmallFort(t, midX, midY, 3, 3, cols, rows, ['n', 's', 'e', 'w'])
+  for (let dy = -2; dy <= 2; dy++) {
+    for (let dx = -2; dx <= 2; dx++) {
+      const x = midX + dx, y = midY + dy
+      if (x >= 0 && x < cols && y >= 0 && y < rows) t[y][x] = 'plain'
+    }
+  }
+
+  // Four outposts in each quadrant
+  const outposts = [
+    [Math.floor(cols * 0.28), Math.floor(rows * 0.28)],
+    [Math.floor(cols * 0.72), Math.floor(rows * 0.28)],
+    [Math.floor(cols * 0.28), Math.floor(rows * 0.72)],
+    [Math.floor(cols * 0.72), Math.floor(rows * 0.72)],
   ]
-  for (const [cx, cy] of qCenters) {
-    if (rng.chance(0.6)) placeBlob(t, cx, cy, rng.int(2, 3), 'mountain', rng, rows, cols)
+  for (const [ox, oy] of outposts) {
+    if (rng.chance(0.6)) {
+      placeSmallFort(t, ox, oy, 3, 2, cols, rows, ['s', 'e'])
+      // Clear interior
+      for (let dy = -1; dy <= 1; dy++) {
+        for (let dx = -2; dx <= 2; dx++) {
+          const x = ox + dx, y = oy + dy
+          if (x >= 0 && x < cols && y >= 0 && y < rows) t[y][x] = 'plain'
+        }
+      }
+    } else {
+      placeBlob(t, ox, oy, rng.int(2, 3), 'mountain', rng, rows, cols)
+    }
   }
 }
 
@@ -238,6 +279,7 @@ function genFortress(t: TerrainType[][], cols: number, rows: number, rng: Seeded
 
 // ============ Plains ============
 function genPlains(t: TerrainType[][], cols: number, rows: number, rng: SeededRandom, seed: number) {
+  // Noise forests
   for (let y = 0; y < rows; y++) {
     for (let x = 0; x < cols; x++) {
       if (isInSafeZone(x, y, cols, rows)) continue
@@ -245,17 +287,40 @@ function genPlains(t: TerrainType[][], cols: number, rows: number, rng: SeededRa
       if (n > 0.58 && n < 0.7) t[y][x] = 'forest'
     }
   }
-  // Small hills (away from edges)
-  for (let i = 0; i < rng.int(3, 5); i++) {
-    const cx = rng.int(SAFE_CELLS + 2, cols - SAFE_CELLS - 2)
-    const cy = rng.int(SAFE_CELLS + 2, rows - SAFE_CELLS - 2)
-    placeBlob(t, cx, cy, rng.int(1, 2), 'mountain', rng, rows, cols)
+
+  // Central village (small fort)
+  const midX = Math.floor(cols / 2), midY = Math.floor(rows / 2)
+  placeSmallFort(t, midX, midY, 4, 3, cols, rows, ['n', 's', 'e', 'w'])
+  // Village interior: clear
+  for (let dy = -2; dy <= 2; dy++) {
+    for (let dx = -3; dx <= 3; dx++) {
+      const x = midX + dx, y = midY + dy
+      if (x >= 0 && x < cols && y >= 0 && y < rows) t[y][x] = 'plain'
+    }
   }
-  // Optional stream
+
+  // Two outpost towers on flanks
+  if (rng.chance(0.7)) {
+    placeSmallFort(t, Math.floor(cols * 0.25), Math.floor(rows * 0.35), 2, 2, cols, rows, ['s', 'e'])
+  }
+  if (rng.chance(0.7)) {
+    placeSmallFort(t, Math.floor(cols * 0.75), Math.floor(rows * 0.65), 2, 2, cols, rows, ['n', 'w'])
+  }
+
+  // Small hills
+  for (let i = 0; i < rng.int(2, 4); i++) {
+    const cx = rng.int(SAFE_CELLS + 4, cols - SAFE_CELLS - 4)
+    const cy = rng.int(SAFE_CELLS + 4, rows - SAFE_CELLS - 4)
+    if (Math.abs(cx - midX) > 8 || Math.abs(cy - midY) > 6) {
+      placeBlob(t, cx, cy, rng.int(1, 2), 'mountain', rng, rows, cols)
+    }
+  }
+
+  // Stream
   if (rng.chance(0.5)) {
     let x = rng.int(Math.floor(cols * 0.3), Math.floor(cols * 0.7))
     for (let y = SAFE_CELLS; y < rows - SAFE_CELLS; y++) {
-      if (t[y][x] !== 'mountain') t[y][x] = 'river'
+      if (t[y][x] === 'plain') t[y][x] = 'river'
       if (rng.chance(0.3)) x += rng.int(-1, 1)
       x = Math.max(SAFE_CELLS, Math.min(cols - SAFE_CELLS - 1, x))
     }
@@ -424,6 +489,12 @@ function genChangban(t: TerrainType[][], cols: number, rows: number, rng: Seeded
       if (!isInSafeZone(cols - 1 - dx, y, cols, rows) && rng.chance(0.5)) setIfPlain(t, cols - 1 - dx, y, 'mountain', cols, rows)
     }
   }
+
+  // Defender's camp (south side of river)
+  placeSmallFort(t, Math.floor(cols * 0.5), midY + rng.int(8, 12), 4, 3, cols, rows, ['n'])
+
+  // Attacker's staging area (north side)
+  placeSmallFort(t, Math.floor(cols * 0.4), midY - rng.int(8, 12), 3, 2, cols, rows, ['s', 'e'])
 }
 
 // ============ 赤壁: massive river with fire-prone forests, wind terrain ============
@@ -797,11 +868,19 @@ function genThreeKingdoms(t: TerrainType[][], cols: number, rows: number, rng: S
       if (n > 0.58 && n < 0.68) t[y][x] = 'forest'
     }
   }
-  for (let i = 0; i < rng.int(4, 7); i++) {
+  for (let i = 0; i < rng.int(3, 5); i++) {
     const hx = rng.int(SAFE_CELLS + 3, cols - SAFE_CELLS - 3)
     const hy = rng.int(SAFE_CELLS + 3, rows - SAFE_CELLS - 3)
-    placeBlob(t, hx, hy, rng.int(1, 3), 'mountain', rng, rows, cols)
+    placeBlob(t, hx, hy, rng.int(1, 2), 'mountain', rng, rows, cols)
   }
+
+  // Three cities — one in each zone
+  // Top zone (above Y junction)
+  placeSmallFort(t, midX, Math.floor(midY * 0.4), 4, 3, cols, rows, ['s', 'e', 'w'])
+  // Bottom-left zone
+  placeSmallFort(t, Math.floor(cols * 0.25), Math.floor(rows * 0.75), 3, 3, cols, rows, ['n', 'e'])
+  // Bottom-right zone
+  placeSmallFort(t, Math.floor(cols * 0.75), Math.floor(rows * 0.75), 3, 3, cols, rows, ['n', 'w'])
 }
 
 // ============ 沼泽: swampy terrain with fords and dense vegetation ============
@@ -1187,6 +1266,12 @@ function genGreatWall(t: TerrainType[][], cols: number, rows: number, rng: Seede
     }
     placeBridgesH(t, cols, rows, rng, 2)
   }
+
+  // Southern city (civilized side)
+  placeSmallFort(t, Math.floor(cols * 0.5), wallY + rng.int(10, 14), 5, 4, cols, rows, ['n', 's', 'e', 'w'])
+
+  // Northern barbarian camp
+  placeSmallFort(t, Math.floor(cols * 0.5), Math.floor(wallY * 0.4), 3, 2, cols, rows, ['s'])
 }
 
 // ============ 螺旋: spiral mountain walls forcing circular movement ============
@@ -1884,6 +1969,49 @@ function genSiegeCastle(t: TerrainType[][], cols: number, rows: number, rng: See
 }
 
 // ============ Helpers ============
+
+// Place a small fort/town: rectangular wall with gate openings
+function placeSmallFort(
+  t: TerrainType[][], cx: number, cy: number,
+  halfW: number, halfH: number,
+  cols: number, rows: number,
+  gateDirections: ('n' | 's' | 'e' | 'w')[] = ['n', 's', 'e', 'w'],
+) {
+  // Walls
+  for (let x = cx - halfW; x <= cx + halfW; x++) {
+    for (let y = cy - halfH; y <= cy + halfH; y++) {
+      if (x < 0 || x >= cols || y < 0 || y >= rows || isInSafeZone(x, y, cols, rows)) continue
+      const onEdge = x === cx - halfW || x === cx + halfW || y === cy - halfH || y === cy + halfH
+      if (onEdge) t[y][x] = 'wall'
+    }
+  }
+  // Gates
+  const gateW = 1
+  if (gateDirections.includes('n')) {
+    for (let dx = -gateW; dx <= gateW; dx++) {
+      const gx = cx + dx
+      if (gx >= 0 && gx < cols) t[cy - halfH][gx] = 'bridge'
+    }
+  }
+  if (gateDirections.includes('s')) {
+    for (let dx = -gateW; dx <= gateW; dx++) {
+      const gx = cx + dx
+      if (gx >= 0 && gx < cols && cy + halfH < rows) t[cy + halfH][gx] = 'bridge'
+    }
+  }
+  if (gateDirections.includes('w')) {
+    for (let dy = -gateW; dy <= gateW; dy++) {
+      const gy = cy + dy
+      if (gy >= 0 && gy < rows) t[gy][cx - halfW] = 'bridge'
+    }
+  }
+  if (gateDirections.includes('e')) {
+    for (let dy = -gateW; dy <= gateW; dy++) {
+      const gy = cy + dy
+      if (gy >= 0 && gy < rows && cx + halfW < cols) t[gy][cx + halfW] = 'bridge'
+    }
+  }
+}
 
 function isInSafeZone(x: number, y: number, cols: number, rows: number): boolean {
   const s = SAFE_CELLS
