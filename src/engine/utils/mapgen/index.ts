@@ -1,7 +1,7 @@
-import { BattleMap, TerrainType } from '../../types'
-import { BALANCE } from '../../config/balance'
-import { TERRAIN_MODIFIERS } from '../../config/balance'
-import { SeededRandom } from './random'
+import { BattleMap, TerrainType } from '../../../types'
+import { BALANCE } from '../../../config/balance'
+import { TERRAIN_MODIFIERS } from '../../../config/balance'
+import { SeededRandom } from '../random'
 
 export type MapTemplate = 'valley' | 'crossroads' | 'fortress' | 'plains' | 'river_delta' | 'mountain_pass' | 'siege_castle' | 'changban' | 'chibi' | 'hulao' | 'jieting' | 'twin_lakes' | 'canyon_bridge' | 'three_kingdoms' | 'swamp' | 'labyrinth' | 'islands' | 'ambush_valley' | 'volcano' | 'great_wall' | 'spiral' | 'oasis' | 'frozen_river' | 'arena' | 'bagua' | 'wasteland' | 'waterfall' | 'starfort' | 'dungeon' | 'chessboard' | 'random'
 

@@ -1,5 +1,5 @@
-import { General } from '../types'
-import { SKILLS } from './skills'
+import { General } from '../../types'
+import { SKILLS } from '../skills'
 
 const s = SKILLS
 
