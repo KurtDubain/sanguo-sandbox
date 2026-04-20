@@ -144,6 +144,64 @@ Vite + React 18 + TypeScript + Zustand + Tailwind CSS 4 + Canvas 2D
 
 纯前端，无后端，localStorage持久化对局历史。Seed确定性：相同Seed+配置=完全相同的战斗。
 
+## 项目结构
+
+```
+src/
+├── engine/                     # 战斗引擎（纯逻辑，无UI依赖）
+│   ├── BattleEngine.ts         # 引擎入口，持有SystemState实例
+│   ├── tickOrchestrator.ts     # tick编排器，8阶段系统调度
+│   ├── SystemState.ts          # 系统状态容器（每场战斗隔离）
+│   ├── systems/                # 13个子系统
+│   │   ├── attack.ts           # 伤害管线（横扫/闪避/反击/冲锋/伏击）
+│   │   ├── movement.ts         # A*寻路 + 墙滑 + 碰撞 + 卡住检测
+│   │   ├── morale.ts           # 士气（纪律护甲/连锁/集结/光环）
+│   │   ├── combatMechanics.ts  # 单挑/冲锋动量/伏击/斩将
+│   │   ├── tacticalAI.ts       # 兵种AI（弓兵风筝/骑兵绕后）
+│   │   ├── commanderAI.ts      # 指挥官AI（集火/撤退/保护）
+│   │   ├── commandStyle.ts     # 8种指挥风格 + 死亡退化
+│   │   ├── advancedAI.ts       # 阵营战术 + 战局阶段判断
+│   │   ├── formations.ts       # 齐射/盾墙/架枪/战吼/投降
+│   │   ├── terrainInteraction.ts # 火焰蔓延/雨天泛滥/山地加成
+│   │   ├── siege.ts            # 攻城（箭塔/城门/占领）
+│   │   ├── skill.ts            # 12种技能触发
+│   │   └── weather.ts          # 天气系统
+│   └── utils/
+│       ├── mapgen/             # 地图生成（6个文件）
+│       │   ├── index.ts        # 路由分发 + MapTemplate类型
+│       │   ├── noise.ts        # Perlin噪声 + FBM
+│       │   ├── helpers.ts      # 地形工具函数
+│       │   ├── natural.ts      # 10个自然地形生成器
+│       │   ├── fortified.ts    # 6个城防地图生成器
+│       │   ├── special.ts      # 8个特殊地图生成器
+│       │   └── historic.ts     # 6个历史战场生成器
+│       ├── pathfinding.ts      # A* + Bresenham视线检测
+│       ├── vfx.ts              # VFX管理器
+│       └── ...
+├── config/
+│   ├── generals/               # 将领配置（11个阵营文件）
+│   ├── campaigns.ts            # 25场历史战役
+│   ├── balance.ts              # 全局平衡常量
+│   ├── skills.ts               # 技能定义
+│   └── formationDefs.ts        # 阵法定义
+├── store/
+│   ├── gameStore.ts            # Zustand主store
+│   └── vfxBridge.ts            # VFX事件桥接
+├── features/
+│   ├── battle/
+│   │   ├── canvas/             # Canvas渲染（8个模块）
+│   │   │   ├── index.tsx       # 组件壳 + 渲染编排
+│   │   │   ├── useCanvasInput.ts # 输入Hook（鼠标/触摸/缩放）
+│   │   │   ├── constants.ts    # 地形颜色/纹理/兵种字
+│   │   │   └── renderers/      # 6个纯函数渲染器
+│   │   ├── ControlBar.tsx      # 控制栏
+│   │   ├── KillFeed.tsx        # 击杀/事件Feed
+│   │   └── ...
+│   └── generals/
+│       └── ConfigPanel.tsx     # 选将/配置面板
+└── types/index.ts              # 全局类型定义
+```
+
 ## 部署
 
 参见 [DEPLOY_GUIDE.md](./DEPLOY_GUIDE.md)
