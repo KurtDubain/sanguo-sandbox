@@ -290,6 +290,7 @@ export interface BattleState {
   dangerZone: DangerZone
   siege: SiegeState | null
   alliances: string[][]   // e.g. [['shu','wu'],['wei']] — allied factions don't attack each other
+  activeFires: { col: number; row: number; age: number; maxAge: number }[]
   events: GameEvent[]
   result: BattleResult | null
 }

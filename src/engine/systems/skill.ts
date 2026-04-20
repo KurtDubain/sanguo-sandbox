@@ -4,12 +4,14 @@ import { SKILLS } from '../../config/skills'
 import { distance } from '../utils/math'
 import { SeededRandom } from '../utils/random'
 import { igniteForest } from './terrainInteraction'
+import type { SystemState } from '../SystemState'
 
 export function skillSystem(
   units: BattleUnit[],
   tick: number,
   rng: SeededRandom,
   map?: BattleMap,
+  sys?: SystemState,
 ): GameEvent[] {
   const events: GameEvent[] = []
 
@@ -126,7 +128,7 @@ export function skillSystem(
             }
             // Fire skills ignite nearby forest terrain
             if (effect.type === 'damage' && skillDef.id === 'fire_attack' && map) {
-              igniteForest(map, unit.position.x, unit.position.y, radius)
+              igniteForest(map, unit.position.x, unit.position.y, radius, sys!.activeFires)
             }
             break
           }

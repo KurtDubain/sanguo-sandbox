@@ -8,30 +8,12 @@ import { getWeatherModifiers } from './weather'
 import { TacticalOrder } from './tacticalAI'
 import { findPath, isPathClear } from '../utils/pathfinding'
 import { isEnemy } from '../utils/alliance'
-
-// ======== Path Cache ========
-// Each unit stores: computed waypoints, the goal position, and tick of computation
-interface CachedPath {
-  waypoints: Position[]  // remaining waypoints (NOT mutated; we track index separately)
-  waypointIdx: number
-  goalPos: Position
-  computedTick: number
-}
-
-const pathCache = new Map<string, CachedPath>()
-
-// How long before last-known position is considered "stuck"
-const stuckTracker = new Map<string, { x: number; y: number; stuckTicks: number }>()
-
-export function resetPaths() {
-  pathCache.clear()
-  stuckTracker.clear()
-}
+import type { SystemState, CachedPath } from '../SystemState'
 
 const RECOMPUTE_INTERVAL = 25
 const GOAL_MOVE_THRESHOLD = 50
-const STUCK_THRESHOLD = 15      // if unit hasn't moved > 3px in this many ticks, it's stuck
-const STUCK_MOVE_MIN = 3        // minimum movement to not be considered stuck
+const STUCK_THRESHOLD = 15
+const STUCK_MOVE_MIN = 3
 
 export function movementSystem(
   units: BattleUnit[],
@@ -41,6 +23,7 @@ export function movementSystem(
   tacticalOrders?: Map<string, TacticalOrder>,
   mode: BattleMode = 'faction_battle',
   alliances: string[][] = [],
+  sys?: SystemState,
 ): void {
   const wm = getWeatherModifiers(weather)
 
@@ -142,13 +125,13 @@ export function movementSystem(
     // ===== Execute movement =====
     if (goalPos) {
       const prevPos = { x: unit.position.x, y: unit.position.y }
-      const newPos = smartMove(unit, goalPos, goalIsTarget, moveSpeed, map, rng)
+      const newPos = smartMove(unit, goalPos, goalIsTarget, moveSpeed, map, rng, sys!)
 
       // Clamp and apply
       unit.position = clampPosition(newPos, map.width, map.height)
 
       // Stuck detection: if unit barely moved, track it
-      trackStuck(unit.id, prevPos, unit.position, map, rng)
+      trackStuck(unit.id, prevPos, unit.position, map, rng, sys!)
     }
   }
 
@@ -162,8 +145,8 @@ export function movementSystem(
   if (tick % 60 === 0) {
     for (const unit of units) {
       if (unit.state === 'dead') {
-        pathCache.delete(unit.id)
-        stuckTracker.delete(unit.id)
+        sys!.pathCache.delete(unit.id)
+        sys!.stuckTracker.delete(unit.id)
       }
     }
   }
@@ -177,6 +160,7 @@ function smartMove(
   speed: number,
   map: BattleMap,
   rng: SeededRandom,
+  sys: SystemState,
 ): Position {
   const pos = unit.position
 
@@ -188,7 +172,7 @@ function smartMove(
 
   // 2) If we already have a cached A* path, prefer following it
   //    (avoids oscillation between direct and A* each frame)
-  const cached = pathCache.get(unit.id)
+  const cached = sys.pathCache.get(unit.id)
   const tick = unit.survivalTicks
 
   if (cached && cached.waypointIdx < cached.waypoints.length) {
@@ -206,7 +190,7 @@ function smartMove(
   const direct = moveToward(pos, goal, speed)
   if (isPassable(map, direct.x, direct.y) && isPathClear(map, pos, goal)) {
     // Clear straight path — no A* needed
-    pathCache.delete(unit.id)
+    sys.pathCache.delete(unit.id)
     return direct
   }
 
@@ -219,7 +203,7 @@ function smartMove(
       goalPos: { ...goal },
       computedTick: tick,
     }
-    pathCache.set(unit.id, newCache)
+    sys.pathCache.set(unit.id, newCache)
     // Immediately start following
     const result = followPath(pos, goal, newCache, speed, map, tick)
     if (result) return result
@@ -321,9 +305,10 @@ function trackStuck(
   newPos: Position,
   _map: BattleMap,
   _rng: SeededRandom,
+  sys: SystemState,
 ) {
   const moved = distance(prevPos, newPos)
-  const tracker = stuckTracker.get(unitId) ?? { x: prevPos.x, y: prevPos.y, stuckTicks: 0 }
+  const tracker = sys.stuckTracker.get(unitId) ?? { x: prevPos.x, y: prevPos.y, stuckTicks: 0 }
 
   if (moved < STUCK_MOVE_MIN) {
     tracker.stuckTicks++
@@ -333,14 +318,12 @@ function trackStuck(
     tracker.y = newPos.y
   }
 
-  // If stuck, just clear the path cache so a fresh A* is computed next frame
-  // with full budget. No teleporting — let wall-slide handle it.
   if (tracker.stuckTicks > STUCK_THRESHOLD) {
-    pathCache.delete(unitId)
-    tracker.stuckTicks = 0 // reset so it doesn't spam
+    sys.pathCache.delete(unitId)
+    tracker.stuckTicks = 0
   }
 
-  stuckTracker.set(unitId, tracker)
+  sys.stuckTracker.set(unitId, tracker)
 }
 
 // ======== Spatial Hash Collision ========

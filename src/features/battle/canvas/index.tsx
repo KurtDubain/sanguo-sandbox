@@ -2,7 +2,6 @@ import { useEffect, useRef, useCallback, useState } from 'react'
 import { useGameStore, vfxManager } from '../../../store/gameStore'
 import { BattleState } from '../../../types'
 import { Viewport, DEFAULT_VIEWPORT, zoomAtPoint, screenToWorld, applyViewport, resetTransform } from '../../../engine/utils/viewport'
-import { getActiveFires } from '../../../engine/systems/terrainInteraction'
 import { FACTION_COLORS } from '../../../config/factionDisplay'
 import { TERRAIN_FILL, TERRAIN_PATTERN, TROOP_GLYPHS } from './constants'
 
@@ -297,7 +296,7 @@ export function BattleCanvas() {
     }
 
     // === Active fires ===
-    const fires = getActiveFires()
+    const fires = state.activeFires ?? []
     for (const fire of fires) {
       const fx = fire.col * map.cellSize
       const fy = fire.row * map.cellSize

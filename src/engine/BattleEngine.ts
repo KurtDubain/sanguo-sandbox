@@ -13,11 +13,7 @@ import { createBattleUnit, generateSpawnPositions } from './utils/unitFactory'
 import { createInitialWeather } from './systems/weather'
 import { createSupplyPoints, createDangerZone } from './systems/battlefield'
 import { createSiegeState } from './systems/siege'
-import { resetAttackCooldowns } from './systems/attack'
-import { resetPaths } from './systems/movement'
-import { resetCombatMechanics } from './systems/combatMechanics'
-import { resetTerrainInteraction } from './systems/terrainInteraction'
-import { resetCommandStyles } from './systems/commandStyle'
+import { SystemState, createSystemState } from './SystemState'
 import { executeTick } from './tickOrchestrator'
 
 export class BattleEngine {
@@ -26,6 +22,7 @@ export class BattleEngine {
   private generals: General[]
   private mapTemplate: MapTemplate
   private settings: GameSettings
+  private systemState: SystemState
 
   constructor(generals: General[], mode: BattleMode, seed: number, mapTemplate: MapTemplate = 'random', settings?: GameSettings, formation: FormationType = 'none', boostedIds: string[] = [], alliances: string[][] = []) {
     this.generals = generals
@@ -36,12 +33,11 @@ export class BattleEngine {
       tacticalAI: true, commanderAI: true, autoSlowMo: true, randomModifiers: false,
     }
     this.rng = new SeededRandom(seed)
-    this.resetAllSystems()
+    this.systemState = createSystemState()
 
     const effectiveTemplate = mode === 'siege' ? 'siege_castle' as const : mapTemplate
     const map = generateMap(this.rng, effectiveTemplate)
 
-    // Siege setup
     let siegeState: import('../types').SiegeState | null = null
     let defendingFaction: string | undefined
     if (mode === 'siege') {
@@ -59,7 +55,6 @@ export class BattleEngine {
     const positions = generateSpawnPositions(generals, mode, map, this.rng, defendingFaction)
     const units = generals.map((g, i) => createBattleUnit(g, positions[i]))
 
-    // Apply formation buffs
     const formDef = FORMATIONS[formation]
     if (formDef && formDef.id !== 'none') {
       for (const unit of units) {
@@ -75,7 +70,6 @@ export class BattleEngine {
       }
     }
 
-    // Apply individual boosts
     if (boostedIds.length > 0) {
       const boostSet = new Set(boostedIds)
       for (const unit of units) {
@@ -104,6 +98,7 @@ export class BattleEngine {
       dangerZone: createDangerZone(map.width, map.height),
       siege: siegeState,
       alliances,
+      activeFires: [],
       events: [
         {
           tick: 0, type: 'battle_start',
@@ -122,7 +117,7 @@ export class BattleEngine {
 
   tick(): GameEvent[] {
     if (this.state.phase !== 'running') return []
-    return executeTick(this.state, this.rng, this.settings)
+    return executeTick(this.state, this.rng, this.settings, this.systemState)
   }
 
   runToEnd(): BattleResult {
@@ -139,14 +134,6 @@ export class BattleEngine {
     )
     Object.assign(this.state, engine.getState())
     this.rng = new SeededRandom(newSeed)
-    this.resetAllSystems()
-  }
-
-  private resetAllSystems(): void {
-    resetAttackCooldowns()
-    resetPaths()
-    resetCombatMechanics()
-    resetTerrainInteraction()
-    resetCommandStyles()
+    this.systemState = createSystemState()
   }
 }

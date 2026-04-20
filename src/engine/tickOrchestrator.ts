@@ -1,8 +1,7 @@
-// Tick orchestrator: executes one simulation step across all systems
-
 import { BattleState, GameEvent } from '../types'
 import { SeededRandom } from './utils/random'
 import type { GameSettings } from '../store/gameStore'
+import type { SystemState } from './SystemState'
 
 import { weatherSystem } from './systems/weather'
 import { updateChargeDistance, duelSystem, tickChargeMoraleShields } from './systems/combatMechanics'
@@ -26,12 +25,12 @@ export function executeTick(
   state: BattleState,
   rng: SeededRandom,
   settings: GameSettings,
+  sys: SystemState,
 ): GameEvent[] {
   state.tick++
   const newEvents: GameEvent[] = []
   const alliances = state.alliances
 
-  // Update survival ticks
   for (const unit of state.units) {
     if (unit.state !== 'dead') unit.survivalTicks = state.tick
   }
@@ -44,18 +43,18 @@ export function executeTick(
   }
 
   // === Phase 2: Pre-combat (charge, skills, duels) ===
-  updateChargeDistance(state.units)
-  tickChargeMoraleShields()
+  updateChargeDistance(state.units, sys)
+  tickChargeMoraleShields(sys)
 
-  const skillEvents = skillSystem(state.units, state.tick, rng, state.map)
+  const skillEvents = skillSystem(state.units, state.tick, rng, state.map, sys)
   newEvents.push(...skillEvents)
 
   if (settings.duels) {
-    newEvents.push(...duelSystem(state.units, state.tick, rng))
+    newEvents.push(...duelSystem(state.units, state.tick, rng, sys))
   }
 
   // === Phase 3: AI decisions ===
-  const styleEvents = commandStyleSystem(state.units, state.mode, state.tick, rng)
+  const styleEvents = commandStyleSystem(state.units, state.mode, state.tick, rng, sys)
   newEvents.push(...styleEvents)
 
   const advEvents = advancedAISystem(state.units, state.mode, state.map, state.tick, rng)
@@ -76,8 +75,8 @@ export function executeTick(
 
   // === Phase 4: Target + Movement + Attack ===
   targetSystem(state.units, state.mode, rng, tactOrders, cmdOrders, state.map, alliances)
-  movementSystem(state.units, state.map, rng, state.weather, tactOrders, state.mode, alliances)
-  const attackEvents = attackSystem(state.units, state.tick, rng, state.weather, state.map, alliances)
+  movementSystem(state.units, state.map, rng, state.weather, tactOrders, state.mode, alliances, sys)
+  const attackEvents = attackSystem(state.units, state.tick, rng, state.weather, state.map, alliances, sys)
   newEvents.push(...attackEvents)
 
   // === Phase 5: Morale + Formations ===
@@ -97,10 +96,10 @@ export function executeTick(
   }
 
   // === Phase 6: Terrain + Supply ===
-  const terrainEvents = terrainInteractionSystem(state.units, state.map, state.weather, state.tick, rng)
+  const terrainEvents = terrainInteractionSystem(state.units, state.map, state.weather, state.tick, rng, sys)
   newEvents.push(...terrainEvents)
+  state.activeFires = sys.activeFires
 
-  // Supply line penalty
   if (state.tick % 30 === 0) {
     for (const unit of state.units) {
       if (unit.state === 'dead') continue
@@ -165,7 +164,6 @@ export function executeTick(
     }
   }
 
-  // Event buffer management
   state.events.push(...newEvents)
   if (state.events.length > 600) {
     state.events = state.events.slice(-400)

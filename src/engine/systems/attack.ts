@@ -10,12 +10,7 @@ import {
   commanderDeathCheck, isInDuel, activateChargeMoraleShield, hasChargeMoraleShield,
 } from './combatMechanics'
 import { areAllied, isEnemy } from '../utils/alliance'
-
-const attackCooldowns = new Map<string, number>()
-
-export function resetAttackCooldowns() {
-  attackCooldowns.clear()
-}
+import type { SystemState } from '../SystemState'
 
 export function attackSystem(
   units: BattleUnit[],
@@ -24,6 +19,7 @@ export function attackSystem(
   weather: WeatherState,
   map?: import('../../types').BattleMap,
   alliances: string[][] = [],
+  sys?: SystemState,
 ): GameEvent[] {
   const events: GameEvent[] = []
   const wm = getWeatherModifiers(weather)
@@ -31,7 +27,7 @@ export function attackSystem(
   for (const unit of units) {
     if (unit.state !== 'attacking' || !unit.targetId) continue
     // Skip units in a duel (duel system handles their damage)
-    if (isInDuel(unit.id)) continue
+    if (isInDuel(unit.id, sys!)) continue
 
     const target = units.find((u) => u.id === unit.targetId)
     if (!target || target.state === 'dead') continue
@@ -52,9 +48,9 @@ export function attackSystem(
     }
 
     // Check attack cooldown
-    const lastAttack = attackCooldowns.get(unit.id) ?? 0
+    const lastAttack = sys!.attackCooldowns.get(unit.id) ?? 0
     if (tick - lastAttack < BALANCE.ATTACK_COOLDOWN) continue
-    attackCooldowns.set(unit.id, tick)
+    sys!.attackCooldowns.set(unit.id, tick)
 
     // === Base Attack Power ===
     let atkPower = unit.atk
@@ -167,12 +163,11 @@ export function attackSystem(
 
     // === Cavalry charge momentum ===
     let chargeMult = 1
-    const chargeBonus = getChargeDamageBonus(unit.id)
+    const chargeBonus = getChargeDamageBonus(unit.id, sys!)
     if (chargeBonus > 0 && unit.troopType === 'cavalry') {
       chargeMult = 1 + chargeBonus
-      consumeCharge(unit.id)
-      // Charge morale shield: cavalry gets temporary morale immunity after charging in
-      activateChargeMoraleShield(unit.id)
+      consumeCharge(unit.id, sys!)
+      activateChargeMoraleShield(unit.id, sys!)
       unit.morale = Math.min(unit.maxMorale, unit.morale + BALANCE.CHARGE_MORALE_BOOST)
     }
     atkPower *= chargeMult
@@ -257,7 +252,7 @@ export function attackSystem(
     }
 
     // Morale impact (discipline reduces morale damage taken, charge shield blocks it)
-    if (!hasChargeMoraleShield(target.id)) {
+    if (!hasChargeMoraleShield(target.id, sys!)) {
       const disciplineArmor = 1 - target.personality.discipline * BALANCE.DISCIPLINE_MORALE_ARMOR
       let moralePenalty = finalDamage * BALANCE.MORALE_DECAY_ON_HIT * 0.1 * Math.max(0.3, disciplineArmor)
       if (isFlank) moralePenalty += BALANCE.FLANK_MORALE_PENALTY * Math.max(0.5, disciplineArmor)

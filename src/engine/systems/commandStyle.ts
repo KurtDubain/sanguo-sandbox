@@ -3,28 +3,12 @@
 import { BattleUnit, BattleMode, GameEvent } from '../../types'
 import { SeededRandom } from '../utils/random'
 import { FACTION_NAMES } from '../../config/factionDisplay'
-
-export type CommandStyle =
-  | 'methodical' | 'aggressive' | 'cautious' | 'flanker'
-  | 'sniper' | 'guerrilla' | 'headless' | 'panicked'
+import type { SystemState, CommandStyle } from '../SystemState'
 
 const STYLE_NAMES: Record<CommandStyle, string> = {
   methodical: '稳扎稳打', aggressive: '全军突击', cautious: '以逸待劳',
   flanker: '两面夹击', sniper: '斩首行动', guerrilla: '化整为零',
   headless: '群龙无首', panicked: '兵败如山',
-}
-
-interface FactionCommand {
-  style: CommandStyle
-  commanderId: string
-  styleSetTick: number
-  announced: boolean // whether the initial style was announced
-}
-
-const factionCommands = new Map<string, FactionCommand>()
-
-export function resetCommandStyles() {
-  factionCommands.clear()
 }
 
 function pickStyleForCommander(commander: BattleUnit, rng: SeededRandom): CommandStyle {
@@ -41,11 +25,13 @@ export function commandStyleSystem(
   mode: BattleMode,
   tick: number,
   rng: SeededRandom,
+  sys: SystemState,
 ): GameEvent[] {
   if (mode === 'free_for_all') return []
 
   const events: GameEvent[] = []
   const factions = [...new Set(units.filter((u) => u.state !== 'dead').map((u) => u.faction))]
+  const factionCommands = sys.factionCommands
 
   for (const faction of factions) {
     const members = units.filter((u) => u.faction === faction && u.state !== 'dead')
@@ -182,6 +168,6 @@ function applyStyleEffects(
   }
 }
 
-export function getFactionStyle(faction: string): CommandStyle | null {
-  return factionCommands.get(faction)?.style ?? null
+export function getFactionStyle(faction: string, sys: SystemState): CommandStyle | null {
+  return sys.factionCommands.get(faction)?.style ?? null
 }
