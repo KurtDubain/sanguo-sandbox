@@ -1,11 +1,11 @@
 import { create } from 'zustand'
 import { BattleEngine } from '../engine'
 import { ALL_GENERALS, GOD_GENERALS, ALL_GENERALS_WITH_GODS } from '../config/generals'
-import { VFXManager } from '../engine/utils/vfx'
 import { MapTemplate } from '../engine/utils/mapgen'
 import { FormationType } from '../config/formationDefs'
 import { FACTION_COLORS } from '../config/factionDisplay'
 import { saveMatchResult } from '../engine/utils/history'
+import { vfxManager, processEventsForVFX, updateTrails, updateDuelHighlight } from './vfxBridge'
 import {
   General,
   BattleState,
@@ -14,8 +14,7 @@ import {
   BatchResult,
 } from '../types'
 
-// Singleton VFX manager shared with renderer
-export const vfxManager = new VFXManager()
+export { vfxManager }
 
 export interface GameSettings {
   weather: boolean
@@ -128,73 +127,6 @@ interface GameStore {
   tickBattle: () => void
 
   runBatch: (count: number) => void
-}
-
-// Process events to generate VFX
-function processEventsForVFX(events: GameEvent[], units: BattleState['units']) {
-  for (const ev of events) {
-    const source = ev.sourceId ? units.find((u) => u.id === ev.sourceId) : null
-    const target = ev.targetId ? units.find((u) => u.id === ev.targetId) : null
-
-    switch (ev.type) {
-      case 'attack':
-        if (target && source) {
-          const isCrit = ev.message.includes('暴击')
-          vfxManager.addDamageNumber(target.position.x, target.position.y, ev.value ?? 0, isCrit)
-          vfxManager.addHitFlash(target.position.x, target.position.y)
-          // Projectile
-          const isMelee = source.range <= 60
-          vfxManager.addProjectile(
-            source.position.x, source.position.y,
-            target.position.x, target.position.y,
-            isMelee ? 'slash' : 'arrow',
-            source.color,
-          )
-        }
-        break
-      case 'kill':
-        if (target) {
-          vfxManager.addDeath(target.position.x, target.position.y, target.name, target.color)
-          vfxManager.removeTrail(target.id)
-        }
-        break
-      case 'duel':
-        if (source && target && ev.message.includes('开始')) {
-          vfxManager.setDuel(
-            source.position.x, source.position.y,
-            target.position.x, target.position.y,
-            source.name, target.name,
-          )
-        } else if (ev.message.includes('胜') || ev.message.includes('斩杀')) {
-          vfxManager.clearDuel()
-        }
-        break
-      case 'skill_trigger':
-        if (source) {
-          vfxManager.addSkillBurst(
-            source.position.x, source.position.y,
-            60, ev.message, source.color
-          )
-        }
-        break
-      case 'morale_rout':
-        if (source) {
-          vfxManager.addMoraleText(source.position.x, source.position.y, '溃败!')
-        }
-        break
-      case 'morale_break':
-        if (source) {
-          vfxManager.addMoraleText(source.position.x, source.position.y, '动摇!')
-        }
-        break
-      case 'morale_recover':
-        if (source) {
-          vfxManager.addHealNumber(source.position.x, source.position.y, 0)
-          vfxManager.addMoraleText(source.position.x, source.position.y, '恢复!')
-        }
-        break
-    }
-  }
 }
 
 export const useGameStore = create<GameStore>((set, get) => ({
@@ -399,28 +331,8 @@ export const useGameStore = create<GameStore>((set, get) => ({
 
     // Feed events to VFX
     processEventsForVFX(newEvents, state.units)
-
-    // Update unit trails
-    for (const u of state.units) {
-      if (u.state === 'dead') continue
-      if (u.state === 'moving' || u.state === 'attacking') {
-        vfxManager.updateTrail(u.id, u.position.x, u.position.y, u.color)
-      }
-    }
-
-    // Update duel highlight positions
-    if (vfxManager.duelHighlight) {
-      const dh = vfxManager.duelHighlight
-      // Find the duel participants and update positions
-      const a = state.units.find((u) => u.name === dh.nameA)
-      const b = state.units.find((u) => u.name === dh.nameB)
-      if (a && b && a.state !== 'dead' && b.state !== 'dead') {
-        dh.x1 = a.position.x; dh.y1 = a.position.y
-        dh.x2 = b.position.x; dh.y2 = b.position.y
-      } else {
-        vfxManager.clearDuel()
-      }
-    }
+    updateTrails(state.units)
+    updateDuelHighlight(state.units)
 
     vfxManager.tick()
 

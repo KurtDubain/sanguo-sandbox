@@ -1,0 +1,148 @@
+import { General } from '../../types'
+import { g } from './helpers'
+
+const SHU = '#c44e4e'
+
+export const SHU_GENERALS: General[] = [
+  g({
+    id: 'liubei', name: '刘备', faction: 'shu', troopType: 'infantry', rarity: 'legend', color: SHU,
+    command: 78, strategy: 72, politics: 85, martial: 65, achievement: 92, charisma: 99,
+    hp: 850, atk: 60, def: 60, speed: 48, morale: 95, range: 50, vision: 100,
+    personality: { aggressiveness: 40, caution: 65, discipline: 80, greed: 20, loyalty: 95 },
+    skills: ['rally', 'inspire'],
+  }),
+  g({
+    id: 'zhugeliang', name: '诸葛亮', faction: 'shu', troopType: 'archer', rarity: 'legend', color: SHU,
+    command: 92, strategy: 99, politics: 95, martial: 38, achievement: 95, charisma: 92,
+    hp: 700, atk: 55, def: 50, speed: 45, morale: 88, range: 160, vision: 150,
+    personality: { aggressiveness: 45, caution: 85, discipline: 95, greed: 15, loyalty: 100 },
+    skills: ['fire_attack', 'stratagem'],
+  }),
+  g({
+    id: 'guanyu', name: '关羽', faction: 'shu', troopType: 'cavalry', rarity: 'legend', color: SHU,
+    command: 88, strategy: 75, politics: 62, martial: 97, achievement: 95, charisma: 97,
+    hp: 1350, atk: 95, def: 78, speed: 62, morale: 98, range: 50, vision: 105,
+    personality: { aggressiveness: 72, caution: 42, discipline: 78, greed: 40, loyalty: 100 },
+    skills: ['duel', 'roar', 'charge'],
+  }),
+  g({
+    id: 'zhangfei', name: '张飞', faction: 'shu', troopType: 'spearman', rarity: 'legend', color: SHU,
+    command: 78, strategy: 48, politics: 32, martial: 95, achievement: 82, charisma: 65,
+    hp: 1300, atk: 95, def: 68, speed: 62, morale: 88, range: 50, vision: 82,
+    personality: { aggressiveness: 92, caution: 12, discipline: 45, greed: 50, loyalty: 100 },
+    skills: ['roar', 'charge', 'duel'],
+  }),
+  g({
+    id: 'zhaoyun', name: '赵云', faction: 'shu', troopType: 'cavalry', rarity: 'legend', color: SHU,
+    command: 85, strategy: 78, politics: 58, martial: 96, achievement: 88, charisma: 92,
+    hp: 1250, atk: 92, def: 78, speed: 72, morale: 95, range: 50, vision: 108,
+    personality: { aggressiveness: 68, caution: 55, discipline: 92, greed: 10, loyalty: 100 },
+    skills: ['charge', 'duel', 'fortify'],
+  }),
+  g({
+    id: 'machao', name: '马超', faction: 'shu', troopType: 'cavalry', rarity: 'elite', color: SHU,
+    command: 75, strategy: 50, politics: 35, martial: 95, achievement: 72, charisma: 65,
+    hp: 1000, atk: 90, def: 58, speed: 72, morale: 78, range: 50, vision: 90,
+    personality: { aggressiveness: 92, caution: 15, discipline: 50, greed: 70, loyalty: 55 },
+    skills: ['charge', 'roar'],
+  }),
+  g({
+    id: 'huangzhong', name: '黄忠', faction: 'shu', troopType: 'archer', rarity: 'elite', color: SHU,
+    command: 72, strategy: 55, politics: 40, martial: 88, achievement: 68, charisma: 60,
+    hp: 850, atk: 82, def: 55, speed: 45, morale: 85, range: 180, vision: 120,
+    personality: { aggressiveness: 65, caution: 45, discipline: 80, greed: 40, loyalty: 90 },
+    skills: ['snipe'],
+  }),
+  g({
+    id: 'weiyan', name: '魏延', faction: 'shu', troopType: 'infantry', rarity: 'elite', color: SHU,
+    command: 80, strategy: 68, politics: 38, martial: 88, achievement: 70, charisma: 45,
+    hp: 980, atk: 82, def: 62, speed: 55, morale: 72, range: 50, vision: 90,
+    personality: { aggressiveness: 85, caution: 25, discipline: 45, greed: 80, loyalty: 35 },
+    skills: ['ambush', 'charge'],
+  }),
+  g({
+    id: 'jiangwei', name: '姜维', faction: 'shu', troopType: 'spearman', rarity: 'elite', color: SHU,
+    command: 85, strategy: 82, politics: 60, martial: 82, achievement: 72, charisma: 70,
+    hp: 900, atk: 76, def: 65, speed: 58, morale: 82, range: 50, vision: 100,
+    personality: { aggressiveness: 72, caution: 50, discipline: 80, greed: 45, loyalty: 90 },
+    skills: ['stratagem', 'charge'],
+  }),
+  g({
+    id: 'fazheng', name: '法正', faction: 'shu', troopType: 'infantry', rarity: 'elite', color: SHU,
+    command: 65, strategy: 92, politics: 78, martial: 40, achievement: 70, charisma: 55,
+    hp: 680, atk: 48, def: 45, speed: 48, morale: 75, range: 50, vision: 125,
+    personality: { aggressiveness: 55, caution: 65, discipline: 60, greed: 60, loyalty: 80 },
+    skills: ['ambush', 'stratagem'],
+  }),
+  // ---- 新增 ----
+  g({
+    id: 'pangtong', name: '庞统', faction: 'shu', troopType: 'archer', rarity: 'legend', color: SHU,
+    command: 78, strategy: 95, politics: 80, martial: 35, achievement: 68, charisma: 62,
+    hp: 660, atk: 48, def: 42, speed: 48, morale: 76, range: 150, vision: 135,
+    personality: { aggressiveness: 60, caution: 55, discipline: 72, greed: 35, loyalty: 88 },
+    skills: ['fire_attack', 'stratagem'],
+  }),
+  g({
+    id: 'guanping', name: '关平', faction: 'shu', troopType: 'cavalry', rarity: 'normal', color: SHU,
+    command: 68, strategy: 55, politics: 42, martial: 80, achievement: 52, charisma: 65,
+    hp: 920, atk: 75, def: 62, speed: 58, morale: 82, range: 50, vision: 85,
+    personality: { aggressiveness: 65, caution: 45, discipline: 80, greed: 25, loyalty: 98 },
+    skills: ['charge'],
+  }),
+  g({
+    id: 'guanxing', name: '关兴', faction: 'shu', troopType: 'cavalry', rarity: 'normal', color: SHU,
+    command: 65, strategy: 52, politics: 38, martial: 78, achievement: 48, charisma: 62,
+    hp: 900, atk: 72, def: 58, speed: 60, morale: 80, range: 50, vision: 82,
+    personality: { aggressiveness: 72, caution: 40, discipline: 75, greed: 30, loyalty: 95 },
+    skills: ['duel'],
+  }),
+  g({
+    id: 'zhangbao', name: '张苞', faction: 'shu', troopType: 'spearman', rarity: 'normal', color: SHU,
+    command: 62, strategy: 42, politics: 32, martial: 80, achievement: 45, charisma: 55,
+    hp: 920, atk: 75, def: 55, speed: 55, morale: 78, range: 50, vision: 78,
+    personality: { aggressiveness: 82, caution: 20, discipline: 50, greed: 40, loyalty: 95 },
+    skills: ['roar'],
+  }),
+  g({
+    id: 'liaohua', name: '廖化', faction: 'shu', troopType: 'infantry', rarity: 'normal', color: SHU,
+    command: 68, strategy: 55, politics: 48, martial: 72, achievement: 55, charisma: 58,
+    hp: 880, atk: 68, def: 62, speed: 50, morale: 80, range: 50, vision: 85,
+    personality: { aggressiveness: 55, caution: 55, discipline: 78, greed: 20, loyalty: 92 },
+    skills: ['fortify'],
+  }),
+  g({
+    id: 'wangping', name: '王平', faction: 'shu', troopType: 'shield', rarity: 'elite', color: SHU,
+    command: 78, strategy: 65, politics: 50, martial: 68, achievement: 58, charisma: 62,
+    hp: 950, atk: 62, def: 78, speed: 42, morale: 85, range: 50, vision: 90,
+    personality: { aggressiveness: 40, caution: 72, discipline: 92, greed: 12, loyalty: 90 },
+    skills: ['shield_wall', 'fortify'],
+  }),
+  g({
+    id: 'madai', name: '马岱', faction: 'shu', troopType: 'cavalry', rarity: 'normal', color: SHU,
+    command: 68, strategy: 55, politics: 40, martial: 76, achievement: 52, charisma: 55,
+    hp: 880, atk: 72, def: 55, speed: 65, morale: 76, range: 50, vision: 85,
+    personality: { aggressiveness: 65, caution: 42, discipline: 68, greed: 35, loyalty: 82 },
+    skills: ['ambush'],
+  }),
+  g({
+    id: 'yanyan', name: '严颜', faction: 'shu', troopType: 'shield', rarity: 'normal', color: SHU,
+    command: 70, strategy: 52, politics: 48, martial: 75, achievement: 50, charisma: 68,
+    hp: 950, atk: 65, def: 72, speed: 40, morale: 85, range: 50, vision: 80,
+    personality: { aggressiveness: 45, caution: 60, discipline: 82, greed: 15, loyalty: 90 },
+    skills: ['fortify'],
+  }),
+  g({
+    id: 'feiyi', name: '费祎', faction: 'shu', troopType: 'infantry', rarity: 'elite', color: SHU,
+    command: 72, strategy: 82, politics: 88, martial: 35, achievement: 65, charisma: 78,
+    hp: 680, atk: 42, def: 48, speed: 45, morale: 82, range: 50, vision: 110,
+    personality: { aggressiveness: 25, caution: 80, discipline: 88, greed: 10, loyalty: 92 },
+    skills: ['rally', 'heal'],
+  }),
+  g({
+    id: 'jiangwan', name: '蒋琬', faction: 'shu', troopType: 'infantry', rarity: 'normal', color: SHU,
+    command: 70, strategy: 78, politics: 85, martial: 30, achievement: 60, charisma: 75,
+    hp: 650, atk: 38, def: 45, speed: 42, morale: 80, range: 50, vision: 105,
+    personality: { aggressiveness: 20, caution: 82, discipline: 90, greed: 8, loyalty: 95 },
+    skills: ['heal', 'inspire'],
+  }),
+]

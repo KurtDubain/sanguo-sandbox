@@ -1,0 +1,148 @@
+import { General } from '../../types'
+import { g } from './helpers'
+
+const WU = '#4eb84e'
+
+export const WU_GENERALS: General[] = [
+  g({
+    id: 'sunquan', name: '孙权', faction: 'wu', troopType: 'infantry', rarity: 'legend', color: WU,
+    command: 80, strategy: 78, politics: 88, martial: 60, achievement: 88, charisma: 85,
+    hp: 850, atk: 58, def: 62, speed: 48, morale: 90, range: 50, vision: 110,
+    personality: { aggressiveness: 45, caution: 70, discipline: 85, greed: 35, loyalty: 80 },
+    skills: ['rally', 'inspire'],
+  }),
+  g({
+    id: 'zhouyu', name: '周瑜', faction: 'wu', troopType: 'archer', rarity: 'legend', color: WU,
+    command: 88, strategy: 95, politics: 82, martial: 68, achievement: 88, charisma: 88,
+    hp: 780, atk: 65, def: 55, speed: 55, morale: 88, range: 150, vision: 130,
+    personality: { aggressiveness: 65, caution: 60, discipline: 85, greed: 40, loyalty: 90 },
+    skills: ['fire_attack', 'stratagem'],
+  }),
+  g({
+    id: 'luxun', name: '陆逊', faction: 'wu', troopType: 'infantry', rarity: 'legend', color: WU,
+    command: 85, strategy: 92, politics: 82, martial: 55, achievement: 82, charisma: 78,
+    hp: 750, atk: 55, def: 58, speed: 52, morale: 85, range: 50, vision: 130,
+    personality: { aggressiveness: 40, caution: 80, discipline: 90, greed: 25, loyalty: 85 },
+    skills: ['fire_attack', 'fortify'],
+  }),
+  g({
+    id: 'lvmeng', name: '吕蒙', faction: 'wu', troopType: 'infantry', rarity: 'elite', color: WU,
+    command: 82, strategy: 85, politics: 72, martial: 78, achievement: 78, charisma: 68,
+    hp: 880, atk: 72, def: 65, speed: 55, morale: 82, range: 50, vision: 115,
+    personality: { aggressiveness: 60, caution: 65, discipline: 80, greed: 50, loyalty: 85 },
+    skills: ['ambush', 'stratagem'],
+  }),
+  g({
+    id: 'lusu', name: '鲁肃', faction: 'wu', troopType: 'shield', rarity: 'elite', color: WU,
+    command: 72, strategy: 85, politics: 90, martial: 45, achievement: 72, charisma: 88,
+    hp: 780, atk: 45, def: 65, speed: 42, morale: 88, range: 50, vision: 110,
+    personality: { aggressiveness: 25, caution: 85, discipline: 90, greed: 10, loyalty: 95 },
+    skills: ['rally', 'heal'],
+  }),
+  g({
+    id: 'taishici', name: '太史慈', faction: 'wu', troopType: 'archer', rarity: 'elite', color: WU,
+    command: 72, strategy: 55, politics: 40, martial: 90, achievement: 68, charisma: 72,
+    hp: 920, atk: 80, def: 58, speed: 62, morale: 82, range: 170, vision: 110,
+    personality: { aggressiveness: 78, caution: 35, discipline: 70, greed: 45, loyalty: 90 },
+    skills: ['snipe', 'charge'],
+  }),
+  g({
+    id: 'ganning', name: '甘宁', faction: 'wu', troopType: 'cavalry', rarity: 'elite', color: WU,
+    command: 72, strategy: 55, politics: 35, martial: 88, achievement: 70, charisma: 60,
+    hp: 950, atk: 82, def: 55, speed: 65, morale: 78, range: 50, vision: 90,
+    personality: { aggressiveness: 90, caution: 15, discipline: 45, greed: 65, loyalty: 70 },
+    skills: ['ambush', 'roar'],
+  }),
+  g({
+    id: 'dingfeng', name: '丁奉', faction: 'wu', troopType: 'infantry', rarity: 'normal', color: WU,
+    command: 72, strategy: 62, politics: 50, martial: 78, achievement: 65, charisma: 60,
+    hp: 900, atk: 72, def: 62, speed: 55, morale: 78, range: 50, vision: 90,
+    personality: { aggressiveness: 70, caution: 45, discipline: 75, greed: 40, loyalty: 85 },
+    skills: ['fortify'],
+  }),
+  g({
+    id: 'sunce', name: '孙策', faction: 'wu', troopType: 'cavalry', rarity: 'legend', color: WU,
+    command: 82, strategy: 68, politics: 60, martial: 92, achievement: 80, charisma: 88,
+    hp: 1000, atk: 85, def: 58, speed: 68, morale: 92, range: 50, vision: 100,
+    personality: { aggressiveness: 88, caution: 20, discipline: 65, greed: 55, loyalty: 85 },
+    skills: ['charge', 'duel'],
+  }),
+  g({
+    id: 'lukang', name: '陆抗', faction: 'wu', troopType: 'shield', rarity: 'elite', color: WU,
+    command: 85, strategy: 82, politics: 78, martial: 65, achievement: 70, charisma: 75,
+    hp: 880, atk: 60, def: 75, speed: 45, morale: 85, range: 50, vision: 105,
+    personality: { aggressiveness: 40, caution: 75, discipline: 90, greed: 20, loyalty: 90 },
+    skills: ['fortify', 'rally'],
+  }),
+  // ---- 新增 ----
+  g({
+    id: 'huanggai', name: '黄盖', faction: 'wu', troopType: 'infantry', rarity: 'elite', color: WU,
+    command: 72, strategy: 62, politics: 50, martial: 78, achievement: 65, charisma: 70,
+    hp: 950, atk: 72, def: 65, speed: 48, morale: 88, range: 50, vision: 85,
+    personality: { aggressiveness: 72, caution: 40, discipline: 85, greed: 15, loyalty: 98 },
+    skills: ['fire_attack'],
+  }),
+  g({
+    id: 'chengpu', name: '程普', faction: 'wu', troopType: 'spearman', rarity: 'normal', color: WU,
+    command: 75, strategy: 58, politics: 52, martial: 76, achievement: 62, charisma: 68,
+    hp: 920, atk: 70, def: 65, speed: 48, morale: 82, range: 50, vision: 88,
+    personality: { aggressiveness: 55, caution: 55, discipline: 82, greed: 20, loyalty: 90 },
+    skills: ['fortify'],
+  }),
+  g({
+    id: 'handang', name: '韩当', faction: 'wu', troopType: 'infantry', rarity: 'normal', color: WU,
+    command: 70, strategy: 52, politics: 45, martial: 75, achievement: 58, charisma: 62,
+    hp: 900, atk: 70, def: 62, speed: 50, morale: 80, range: 50, vision: 85,
+    personality: { aggressiveness: 60, caution: 50, discipline: 78, greed: 25, loyalty: 88 },
+    skills: ['charge'],
+  }),
+  g({
+    id: 'zhoutai', name: '周泰', faction: 'wu', troopType: 'shield', rarity: 'elite', color: WU,
+    command: 65, strategy: 42, politics: 35, martial: 88, achievement: 62, charisma: 72,
+    hp: 1150, atk: 78, def: 80, speed: 45, morale: 90, range: 50, vision: 78,
+    personality: { aggressiveness: 65, caution: 35, discipline: 82, greed: 10, loyalty: 100 },
+    skills: ['shield_wall', 'fortify'],
+  }),
+  g({
+    id: 'lingtong', name: '凌统', faction: 'wu', troopType: 'cavalry', rarity: 'normal', color: WU,
+    command: 68, strategy: 52, politics: 40, martial: 82, achievement: 55, charisma: 62,
+    hp: 920, atk: 78, def: 55, speed: 62, morale: 78, range: 50, vision: 85,
+    personality: { aggressiveness: 80, caution: 25, discipline: 60, greed: 45, loyalty: 80 },
+    skills: ['charge', 'duel'],
+  }),
+  g({
+    id: 'xusheng', name: '徐盛', faction: 'wu', troopType: 'archer', rarity: 'normal', color: WU,
+    command: 70, strategy: 65, politics: 48, martial: 72, achievement: 55, charisma: 58,
+    hp: 840, atk: 68, def: 55, speed: 52, morale: 78, range: 150, vision: 100,
+    personality: { aggressiveness: 55, caution: 58, discipline: 75, greed: 30, loyalty: 85 },
+    skills: ['snipe'],
+  }),
+  g({
+    id: 'zhuran', name: '朱然', faction: 'wu', troopType: 'infantry', rarity: 'elite', color: WU,
+    command: 78, strategy: 68, politics: 55, martial: 75, achievement: 65, charisma: 65,
+    hp: 920, atk: 70, def: 68, speed: 50, morale: 85, range: 50, vision: 92,
+    personality: { aggressiveness: 55, caution: 60, discipline: 85, greed: 22, loyalty: 88 },
+    skills: ['fortify', 'inspire'],
+  }),
+  g({
+    id: 'zhangzhao', name: '张昭', faction: 'wu', troopType: 'infantry', rarity: 'normal', color: WU,
+    command: 55, strategy: 78, politics: 90, martial: 25, achievement: 62, charisma: 75,
+    hp: 600, atk: 35, def: 40, speed: 38, morale: 80, range: 50, vision: 100,
+    personality: { aggressiveness: 15, caution: 90, discipline: 92, greed: 8, loyalty: 88 },
+    skills: ['rally', 'heal'],
+  }),
+  g({
+    id: 'zhugejin', name: '诸葛瑾', faction: 'wu', troopType: 'infantry', rarity: 'elite', color: WU,
+    command: 65, strategy: 80, politics: 85, martial: 32, achievement: 60, charisma: 82,
+    hp: 650, atk: 40, def: 45, speed: 42, morale: 82, range: 50, vision: 110,
+    personality: { aggressiveness: 20, caution: 82, discipline: 88, greed: 8, loyalty: 92 },
+    skills: ['inspire', 'heal'],
+  }),
+  g({
+    id: 'lvfan', name: '吕范', faction: 'wu', troopType: 'spearman', rarity: 'normal', color: WU,
+    command: 72, strategy: 65, politics: 68, martial: 62, achievement: 55, charisma: 60,
+    hp: 850, atk: 60, def: 62, speed: 48, morale: 78, range: 50, vision: 90,
+    personality: { aggressiveness: 42, caution: 65, discipline: 82, greed: 18, loyalty: 85 },
+    skills: ['fortify'],
+  }),
+]

@@ -1,0 +1,148 @@
+import { General } from '../../types'
+import { g } from './helpers'
+
+const QUN = '#b8a44e'
+
+export const QUN_GENERALS: General[] = [
+  g({
+    id: 'lvbu', name: '吕布', faction: 'qun', troopType: 'cavalry', rarity: 'legend', color: QUN,
+    command: 70, strategy: 42, politics: 22, martial: 100, achievement: 78, charisma: 50,
+    hp: 1500, atk: 105, def: 75, speed: 78, morale: 82, range: 50, vision: 90,
+    personality: { aggressiveness: 95, caution: 10, discipline: 40, greed: 85, loyalty: 15 },
+    skills: ['duel', 'charge', 'roar'],
+  }),
+  g({
+    id: 'yuanshao', name: '袁绍', faction: 'qun', troopType: 'infantry', rarity: 'elite', color: QUN,
+    command: 72, strategy: 60, politics: 70, martial: 55, achievement: 75, charisma: 72,
+    hp: 850, atk: 55, def: 58, speed: 45, morale: 78, range: 50, vision: 100,
+    personality: { aggressiveness: 55, caution: 60, discipline: 60, greed: 70, loyalty: 50 },
+    skills: ['inspire'],
+  }),
+  g({
+    id: 'huangfusong', name: '皇甫嵩', faction: 'qun', troopType: 'infantry', rarity: 'elite', color: QUN,
+    command: 88, strategy: 78, politics: 72, martial: 75, achievement: 78, charisma: 80,
+    hp: 920, atk: 72, def: 68, speed: 50, morale: 88, range: 50, vision: 105,
+    personality: { aggressiveness: 55, caution: 65, discipline: 92, greed: 15, loyalty: 95 },
+    skills: ['fortify', 'rally'],
+  }),
+  g({
+    id: 'gongsunzan', name: '公孙瓒', faction: 'qun', troopType: 'cavalry', rarity: 'normal', color: QUN,
+    command: 75, strategy: 50, politics: 48, martial: 82, achievement: 62, charisma: 60,
+    hp: 920, atk: 78, def: 55, speed: 68, morale: 75, range: 50, vision: 90,
+    personality: { aggressiveness: 78, caution: 30, discipline: 55, greed: 55, loyalty: 60 },
+    skills: ['charge'],
+  }),
+  g({
+    id: 'chengong', name: '陈宫', faction: 'qun', troopType: 'infantry', rarity: 'elite', color: QUN,
+    command: 70, strategy: 90, politics: 72, martial: 35, achievement: 60, charisma: 72,
+    hp: 650, atk: 42, def: 45, speed: 48, morale: 80, range: 50, vision: 125,
+    personality: { aggressiveness: 45, caution: 70, discipline: 78, greed: 20, loyalty: 90 },
+    skills: ['stratagem', 'fire_attack'],
+  }),
+  g({
+    id: 'tianfeng', name: '田丰', faction: 'qun', troopType: 'infantry', rarity: 'elite', color: QUN,
+    command: 68, strategy: 88, politics: 80, martial: 30, achievement: 58, charisma: 70,
+    hp: 640, atk: 40, def: 48, speed: 42, morale: 82, range: 50, vision: 120,
+    personality: { aggressiveness: 30, caution: 90, discipline: 88, greed: 10, loyalty: 95 },
+    skills: ['stratagem', 'heal'],
+  }),
+  g({
+    id: 'jushou', name: '沮授', faction: 'qun', troopType: 'shield', rarity: 'elite', color: QUN,
+    command: 78, strategy: 85, politics: 78, martial: 38, achievement: 60, charisma: 75,
+    hp: 700, atk: 42, def: 55, speed: 42, morale: 85, range: 50, vision: 115,
+    personality: { aggressiveness: 30, caution: 82, discipline: 85, greed: 12, loyalty: 92 },
+    skills: ['fortify', 'rally'],
+  }),
+  g({
+    id: 'dongzhuo', name: '董卓', faction: 'qun', troopType: 'cavalry', rarity: 'elite', color: QUN,
+    command: 75, strategy: 55, politics: 50, martial: 78, achievement: 72, charisma: 30,
+    hp: 950, atk: 75, def: 60, speed: 50, morale: 65, range: 50, vision: 85,
+    personality: { aggressiveness: 80, caution: 30, discipline: 40, greed: 95, loyalty: 15 },
+    skills: ['roar'],
+  }),
+  g({
+    id: 'zhangxiu', name: '张绣', faction: 'qun', troopType: 'cavalry', rarity: 'normal', color: QUN,
+    command: 70, strategy: 58, politics: 42, martial: 80, achievement: 55, charisma: 50,
+    hp: 900, atk: 75, def: 55, speed: 62, morale: 70, range: 50, vision: 88,
+    personality: { aggressiveness: 72, caution: 40, discipline: 55, greed: 60, loyalty: 45 },
+    skills: ['ambush'],
+  }),
+  g({
+    id: 'mateng', name: '马腾', faction: 'qun', troopType: 'cavalry', rarity: 'normal', color: QUN,
+    command: 78, strategy: 55, politics: 55, martial: 82, achievement: 62, charisma: 72,
+    hp: 950, atk: 78, def: 58, speed: 62, morale: 80, range: 50, vision: 92,
+    personality: { aggressiveness: 68, caution: 40, discipline: 65, greed: 40, loyalty: 82 },
+    skills: ['charge', 'inspire'],
+  }),
+  // ---- 新增 ----
+  g({
+    id: 'yanliang', name: '颜良', faction: 'qun', troopType: 'cavalry', rarity: 'elite', color: QUN,
+    command: 68, strategy: 38, politics: 25, martial: 92, achievement: 55, charisma: 48,
+    hp: 1050, atk: 88, def: 58, speed: 65, morale: 75, range: 50, vision: 78,
+    personality: { aggressiveness: 92, caution: 10, discipline: 55, greed: 50, loyalty: 72 },
+    skills: ['charge', 'duel'],
+  }),
+  g({
+    id: 'wenchou', name: '文丑', faction: 'qun', troopType: 'cavalry', rarity: 'elite', color: QUN,
+    command: 65, strategy: 35, politics: 22, martial: 90, achievement: 52, charisma: 45,
+    hp: 1020, atk: 86, def: 55, speed: 62, morale: 72, range: 50, vision: 75,
+    personality: { aggressiveness: 90, caution: 12, discipline: 50, greed: 55, loyalty: 70 },
+    skills: ['duel', 'roar'],
+  }),
+  g({
+    id: 'gaoshun', name: '高顺', faction: 'qun', troopType: 'spearman', rarity: 'elite', color: QUN,
+    command: 82, strategy: 58, politics: 42, martial: 82, achievement: 60, charisma: 65,
+    hp: 980, atk: 78, def: 72, speed: 48, morale: 88, range: 50, vision: 88,
+    personality: { aggressiveness: 65, caution: 45, discipline: 95, greed: 10, loyalty: 95 },
+    skills: ['fortify', 'charge'],
+  }),
+  g({
+    id: 'huaxiong', name: '华雄', faction: 'qun', troopType: 'cavalry', rarity: 'normal', color: QUN,
+    command: 60, strategy: 35, politics: 22, martial: 85, achievement: 42, charisma: 38,
+    hp: 980, atk: 82, def: 55, speed: 60, morale: 68, range: 50, vision: 75,
+    personality: { aggressiveness: 92, caution: 8, discipline: 40, greed: 65, loyalty: 55 },
+    skills: ['duel'],
+  }),
+  g({
+    id: 'zhangjiao', name: '张角', faction: 'qun', troopType: 'archer', rarity: 'elite', color: QUN,
+    command: 72, strategy: 78, politics: 68, martial: 42, achievement: 70, charisma: 88,
+    hp: 720, atk: 48, def: 42, speed: 45, morale: 85, range: 140, vision: 110,
+    personality: { aggressiveness: 55, caution: 55, discipline: 62, greed: 42, loyalty: 68 },
+    skills: ['fire_attack', 'inspire'],
+  }),
+  g({
+    id: 'menghuo', name: '孟获', faction: 'qun', troopType: 'infantry', rarity: 'elite', color: QUN,
+    command: 62, strategy: 28, politics: 22, martial: 85, achievement: 48, charisma: 65,
+    hp: 1100, atk: 80, def: 68, speed: 48, morale: 82, range: 50, vision: 75,
+    personality: { aggressiveness: 88, caution: 8, discipline: 30, greed: 55, loyalty: 78 },
+    skills: ['roar', 'charge'],
+  }),
+  g({
+    id: 'zhurong', name: '祝融', faction: 'qun', troopType: 'archer', rarity: 'elite', color: QUN,
+    command: 55, strategy: 42, politics: 28, martial: 82, achievement: 42, charisma: 62,
+    hp: 880, atk: 75, def: 50, speed: 58, morale: 78, range: 140, vision: 95,
+    personality: { aggressiveness: 82, caution: 15, discipline: 45, greed: 40, loyalty: 85 },
+    skills: ['fire_attack', 'snipe'],
+  }),
+  g({
+    id: 'zhangren', name: '张任', faction: 'qun', troopType: 'archer', rarity: 'normal', color: QUN,
+    command: 72, strategy: 65, politics: 48, martial: 78, achievement: 48, charisma: 62,
+    hp: 860, atk: 72, def: 58, speed: 50, morale: 82, range: 150, vision: 100,
+    personality: { aggressiveness: 58, caution: 55, discipline: 78, greed: 18, loyalty: 90 },
+    skills: ['snipe', 'ambush'],
+  }),
+  g({
+    id: 'liubiao', name: '刘表', faction: 'qun', troopType: 'infantry', rarity: 'normal', color: QUN,
+    command: 60, strategy: 62, politics: 78, martial: 35, achievement: 58, charisma: 68,
+    hp: 720, atk: 42, def: 50, speed: 40, morale: 75, range: 50, vision: 95,
+    personality: { aggressiveness: 20, caution: 85, discipline: 72, greed: 35, loyalty: 55 },
+    skills: ['rally'],
+  }),
+  g({
+    id: 'yanliangwenchou_gongsun', name: '公孙续', faction: 'qun', troopType: 'cavalry', rarity: 'normal', color: QUN,
+    command: 58, strategy: 40, politics: 35, martial: 72, achievement: 38, charisma: 48,
+    hp: 860, atk: 68, def: 50, speed: 65, morale: 70, range: 50, vision: 82,
+    personality: { aggressiveness: 72, caution: 30, discipline: 50, greed: 45, loyalty: 65 },
+    skills: ['charge'],
+  }),
+]
